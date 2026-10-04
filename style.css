@@ -183,3 +183,39 @@ select {
 .mu-group .why { margin: 0 0 8px; }
 .places a small { display: block; font-weight: 400; color: var(--muted); font-size: 0.8rem; }
 .places a .pname { flex: 1; min-width: 0; color: var(--ink); white-space: normal; font-size: 0.95rem; }
+
+/* แถบแท็บเลื่อนได้เมื่อมีหลายแท็บ */
+.tabs { overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.tabs::-webkit-scrollbar { display: none; }
+.tabs button { flex: 0 0 auto; padding: 9px 13px; }
+
+.tarot-row { display: flex; justify-content: center; gap: 10px; margin: 8px 0 12px; }
+.tcard {
+  width: 92px; height: 148px; border-radius: 12px; padding: 6px; display: flex; flex-direction: column;
+  justify-content: space-between; align-items: center; color: #3b2f4a; border: 3px solid #fff;
+  box-shadow: 0 4px 14px rgba(120, 90, 170, 0.25); background: var(--suit, #e8dcff); transition: transform 0.6s;
+}
+.tcard.big { width: 120px; height: 192px; }
+.tcard .tn { font-size: 0.72rem; font-weight: 700; }
+.tcard .tname { font-size: 0.72rem; font-weight: 700; text-align: center; line-height: 1.2; }
+.tcard svg { width: 54%; height: auto; }
+.tcard.rev { transform: rotate(180deg); }
+.tcard.major { background: linear-gradient(160deg, #fbe7ff, #e5d6ff 55%, #ffe3b8); }
+.tlabel { font-size: 0.75rem; color: var(--muted); text-align: center; margin-top: 4px; }
+.spread-read { padding-left: 18px; }
+.spread-read li { margin-bottom: 8px; }
+.topic-chips { justify-content: flex-start; margin: 8px 0; }
+.topic-chips button { border: 0; font: inherit; cursor: pointer; }
+.topic-chips button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+.siamsi-wrap { display: flex; align-items: center; gap: 14px; margin: 10px 0; }
+.siamsi-wrap .btn { flex: 1; }
+.tube { position: relative; width: 54px; height: 70px; border-radius: 10px 10px 16px 16px; background: #e7546b; flex: 0 0 auto; }
+.tube i { position: absolute; bottom: 40px; width: 4px; height: 38px; background: #f3d27a; border-radius: 2px; }
+.tube i:nth-child(1) { left: 10px; transform: rotate(-12deg); } .tube i:nth-child(2) { left: 18px; height: 44px; }
+.tube i:nth-child(3) { left: 26px; transform: rotate(6deg); } .tube i:nth-child(4) { left: 34px; height: 42px; transform: rotate(-4deg); }
+.tube i:nth-child(5) { left: 41px; transform: rotate(12deg); }
+.tube.shaking { animation: shake 0.18s linear 7; }
+@keyframes shake { 0% { transform: rotate(-14deg); } 50% { transform: rotate(14deg); } 100% { transform: rotate(-14deg); } }
+.stick-no { font-size: 1.4rem; font-weight: 700; color: var(--accent); margin: 8px 0 0; }
+.verse { font-style: italic; color: var(--muted); }
+.mission-line { background: #f3fbf6; border-radius: 12px; padding: 8px 12px; }

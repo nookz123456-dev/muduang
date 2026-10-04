@@ -1,7 +1,9 @@
 import { birthNakshatra, nakshatraAt, taraOf, thaiBirthDay, thaiDate } from "./astro.js";
-import { ANIMALS, NAKSHATRAS, RASHIS, TARAS, THEMES, THAI_DAYS } from "./data.js";
+import { ANIMALS, NAKSHATRAS, RASHIS, TARAS, THEMES, THAI_DAYS, MISSIONS } from "./data.js";
 import { gunaMilan } from "./match.js";
-import { pickDailyMissions } from "./missions.js";
+import { pickDailyMissions, hash } from "./missions.js";
+import { CARDS, SUITS, SPREAD_POS, drawCards, dailyCard } from "./tarot.js";
+import { STICKS, TOPICS, shakeStick } from "./siamsi.js";
 import { birthIshta } from "./ishta.js";
 import { sadeSati } from "./sadesati.js";
 import { checkName, ROLE_MEANING } from "./taksa.js";
@@ -82,6 +84,7 @@ function showTab(name) {
   if (name === "mission") renderMissions();
   if (name === "deity") renderDeity();
   if (name === "detail") renderDetail();
+  if (name === "oracle") renderOracle();
   try { sessionStorage.setItem("muduang.tab", name); } catch { /* ไม่เป็นไร */ }
 }
 document.querySelectorAll("[data-tab]").forEach((b) => b.addEventListener("click", () => showTab(b.dataset.tab)));
@@ -385,6 +388,117 @@ function renderDetail() {
   $("#planet-table").innerHTML = "<tr><th>ดาว</th><th>ราศี</th><th>เรือน</th></tr>" +
     r.planetsByHouse.map((x) => `<tr><td>${x.th}</td><td>${RASHIS[x.sign]}</td><td>${x.house}</td></tr>`).join("");
 }
+
+// ---------- เสี่ยงทาย ----------
+const ROMAN = ["0", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "XIII", "XIV", "XV", "XVI", "XVII", "XVIII", "XIX", "XX", "XXI"];
+const RANK_SHORT = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "P", "Kn", "Q", "K"];
+const SUIT_SVG = {
+  wands: '<svg viewBox="0 0 40 40"><path d="M14 36 L26 6" stroke="#7a4a1e" stroke-width="4" stroke-linecap="round"/><path d="M24 12c4-2 7-1 8 1-3 2-6 2-8-1zM21 19c-4-1-6-4-6-6 3 0 6 2 6 6z" fill="#5fae6b"/></svg>',
+  cups: '<svg viewBox="0 0 40 40"><path d="M9 7h22c0 11-5 16-11 16S9 18 9 7z" fill="#f3d27a" stroke="#b8902e" stroke-width="2"/><path d="M20 23v8M13 34h14" stroke="#b8902e" stroke-width="3" stroke-linecap="round"/></svg>',
+  swords: '<svg viewBox="0 0 40 40"><path d="M20 3l3 6v18h-6V9z" fill="#e9eef5" stroke="#6b7a90" stroke-width="2"/><path d="M11 27h18" stroke="#b8902e" stroke-width="4" stroke-linecap="round"/><path d="M20 29v8" stroke="#7a4a1e" stroke-width="4" stroke-linecap="round"/></svg>',
+  pentacles: '<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="15" fill="#f3d27a" stroke="#b8902e" stroke-width="2"/><path d="M20 9l3.2 7.6 8.1.6-6.2 5.3 2 7.9-7.1-4.4-7.1 4.4 2-7.9-6.2-5.3 8.1-.6z" fill="#fff8e0"/></svg>',
+  major: '<svg viewBox="0 0 40 40"><path d="M20 3l4 12 13 1-10 8 4 13-11-8-11 8 4-13L3 16l13-1z" fill="#f2b84b"/><circle cx="20" cy="20" r="4" fill="#fff"/></svg>',
+};
+
+function cardHTML({ card, reversed }, big = false) {
+  const top = card.major ? ROMAN[card.num] : RANK_SHORT[card.rank];
+  const bg = card.major ? "" : `style="--suit:${SUITS[card.suit].color}"`;
+  return `<div class="tcard ${card.major ? "major" : ""} ${reversed ? "rev" : ""} ${big ? "big" : ""}" ${bg} title="${card.en}">
+    <span class="tn">${top}</span>${SUIT_SVG[card.major ? "major" : card.suit]}<span class="tname">${card.th}</span></div>`;
+}
+
+const cardMeaning = ({ card, reversed }) => (reversed ? card.rev : card.up);
+const cardTitle = ({ card, reversed }) => `${card.th} (${card.en})${reversed ? " · กลับหัว" : ""}`;
+
+function missionFor(theme, seed) {
+  const pool = MISSIONS.filter((m) => m.theme === theme);
+  const m = pool[hash(seed) % pool.length];
+  return `<b>ภารกิจ:</b> ${m.act} <span class="muted">(มู: ${m.mu})</span>`;
+}
+
+let siamsiTopic = "all";
+
+function renderOracle() {
+  const key = dayKeyOf(new Date());
+  const birthIndex = profile ? profile.nak.index : 0;
+  const daily = dailyCard(key, birthIndex, hash);
+  $("#daily-card").innerHTML = cardHTML(daily, true);
+  $("#daily-title").textContent = cardTitle(daily);
+  $("#daily-text").textContent = cardMeaning(daily);
+  $("#daily-mission").innerHTML = missionFor(daily.card.theme, `daily:${key}:${birthIndex}`);
+
+  const spread = store.get("spread", null);
+  if (spread && spread.day === key) showSpread(spread);
+  else $("#spread-result").hidden = true;
+  $("#spread-form").querySelector("button").disabled = !!(spread && spread.day === key);
+  $("#spread-form").querySelector("button").textContent = spread && spread.day === key ? "เปิดใหม่ได้พรุ่งนี้" : "สับไพ่";
+
+  $("#siamsi-topics").innerHTML = Object.entries(TOPICS)
+    .map(([k, v]) => `<button type="button" class="chip" data-topic="${k}" aria-pressed="${k === siamsiTopic}">${v}</button>`).join("");
+  showSiamsiFor(siamsiTopic);
+}
+
+function showSpread(sp) {
+  const cards = sp.cards.map(({ id, reversed }) => ({ card: CARDS.find((c) => c.id === id), reversed }));
+  $("#spread-result").hidden = false;
+  $("#spread-q").textContent = sp.q ? `คำถาม: ${sp.q}` : "";
+  $("#spread-cards").innerHTML = cards.map((c, i) => `<div>${cardHTML(c)}<div class="tlabel">${SPREAD_POS[i]}</div></div>`).join("");
+  $("#spread-read").innerHTML = cards.map((c, i) => `<li><b>${SPREAD_POS[i]}: ${cardTitle(c)}</b><br>${cardMeaning(c)}</li>`).join("") +
+    `<li class="mission-line" style="list-style:none;margin-left:-18px">${missionFor(cards[2].card.theme, `spread:${sp.day}`)}</li>`;
+}
+
+$("#spread-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const key = dayKeyOf(new Date());
+  const cards = drawCards(3).map(({ card, reversed }) => ({ id: card.id, reversed }));
+  const sp = { day: key, q: e.target.q.value.trim(), cards };
+  store.set("spread", sp);
+  renderOracle();
+});
+
+function showSiamsiFor(topic) {
+  const log = store.get("siamsi", {});
+  const key = dayKeyOf(new Date());
+  const got = log[key] && log[key][topic];
+  const btn = $("#siamsi-shake");
+  btn.disabled = !!got;
+  btn.textContent = got ? `เรื่อง${TOPICS[topic]}เสี่ยงแล้ววันนี้` : "เขย่าเซียมซี";
+  if (!got) { $("#siamsi-result").hidden = true; return; }
+  const st = STICKS[got - 1];
+  $("#siamsi-result").hidden = false;
+  $("#ss-no").textContent = `ใบที่ ${st.no} · ${st.level}`;
+  $("#ss-verse").textContent = st.verse;
+  $("#ss-all").innerHTML = `<b>ภาพรวม:</b> ${st.all}`;
+  $("#ss-topic").innerHTML = topic === "all"
+    ? ["work", "money", "love", "health"].map((t) => `<b>${TOPICS[t]}:</b> ${st[t]}`).join("<br>")
+    : `<b>${TOPICS[topic]}:</b> ${st[topic]}`;
+  $("#ss-advice").innerHTML = `<b>คำแนะนำ:</b> ${st.advice}`;
+}
+
+$("#siamsi-topics").addEventListener("click", (e) => {
+  const t = e.target.dataset.topic;
+  if (!t) return;
+  siamsiTopic = t;
+  document.querySelectorAll("#siamsi-topics button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.topic === t));
+  showSiamsiFor(t);
+});
+
+$("#siamsi-shake").addEventListener("click", () => {
+  const tube = $("#siamsi-tube");
+  const btn = $("#siamsi-shake");
+  btn.disabled = true;
+  tube.classList.add("shaking");
+  setTimeout(() => {
+    tube.classList.remove("shaking");
+    const key = dayKeyOf(new Date());
+    const log = store.get("siamsi", {});
+    // เก็บแค่วันนี้ ไม่ให้ข้อมูลสะสมไม่จบ
+    const today = log[key] || {};
+    today[siamsiTopic] = shakeStick().no;
+    store.set("siamsi", { [key]: today });
+    showSiamsiFor(siamsiTopic);
+  }, 1300);
+});
 
 // ---------- องค์เทพ ----------
 const SIGN_NAMES = RASHIS;

@@ -29,6 +29,7 @@
   <button role="tab" data-tab="detail" aria-selected="false">ละเอียด</button>
   <button role="tab" data-tab="mission" aria-selected="false">ภารกิจ</button>
   <button role="tab" data-tab="deity" aria-selected="false">องค์เทพ</button>
+  <button role="tab" data-tab="oracle" aria-selected="false">เสี่ยงทาย</button>
   <button role="tab" data-tab="couple" aria-selected="false">เช็คคู่</button>
 </nav>
 
@@ -210,6 +211,49 @@
         <p class="small" id="deity-how"></p>
       </details>
     </div>
+  </section>
+
+  <!-- เสี่ยงทาย -->
+  <section id="tab-oracle" class="panel" hidden>
+    <article class="card center">
+      <p class="muted small">ไพ่ทาโรต์ประจำวัน</p>
+      <div class="tarot-row" id="daily-card"></div>
+      <h3 id="daily-title"></h3>
+      <p id="daily-text"></p>
+      <p class="mission-line small" id="daily-mission"></p>
+    </article>
+
+    <article class="card">
+      <h3>เปิดไพ่ 3 ใบ: อดีต ปัจจุบัน อนาคต</h3>
+      <p class="muted small">ตั้งคำถามในใจ หรือพิมพ์ไว้ก็ได้ เปิดได้วันละครั้ง</p>
+      <form id="spread-form" class="inline">
+        <input name="q" maxlength="80" placeholder="เช่น งานใหม่จะไปได้ดีไหม">
+        <button class="btn" type="submit">สับไพ่</button>
+      </form>
+      <div id="spread-result" hidden>
+        <p class="small muted" id="spread-q"></p>
+        <div class="tarot-row" id="spread-cards"></div>
+        <ol class="spread-read" id="spread-read"></ol>
+      </div>
+    </article>
+
+    <article class="card">
+      <h3>เซียมซีมูดวง</h3>
+      <p class="muted small">เลือกเรื่องที่อยากถาม ตั้งจิตแล้วเขย่า เรื่องเดิมเสี่ยงได้วันละครั้ง</p>
+      <div class="chips topic-chips" id="siamsi-topics"></div>
+      <div class="siamsi-wrap">
+        <div class="tube" id="siamsi-tube" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+        <button class="btn" id="siamsi-shake" type="button">เขย่าเซียมซี</button>
+      </div>
+      <div id="siamsi-result" hidden>
+        <p class="stick-no" id="ss-no"></p>
+        <p class="verse" id="ss-verse"></p>
+        <p id="ss-all"></p>
+        <p id="ss-topic"></p>
+        <p class="mission-line small" id="ss-advice"></p>
+      </div>
+      <p class="small muted">เซียมซีชุดนี้เขียนขึ้นเองสำหรับมูดวง ไม่ใช่เซียมซีของวัดใด</p>
+    </article>
   </section>
 
   <!-- เช็คคู่ -->
