@@ -5,6 +5,9 @@ import { pickDailyMissions } from "./missions.js";
 import { birthIshta } from "./ishta.js";
 import { sadeSati } from "./sadesati.js";
 import { checkName, ROLE_MEANING } from "./taksa.js";
+import { PROVINCES, placeOf } from "./provinces.js";
+import { detailReading } from "./detail.js";
+import { HOUSE_TOPICS } from "./readings.js";
 import { DEITIES, ATMAKARAKA, NAK_DEITIES, PLANET_TH } from "./deities.js";
 
 const $ = (s) => document.querySelector(s);
@@ -77,6 +80,7 @@ function showTab(name) {
   document.querySelectorAll(".panel").forEach((p) => (p.hidden = p.id !== "tab-" + name));
   if (name === "mission") renderMissions();
   if (name === "deity") renderDeity();
+  if (name === "detail") renderDetail();
   try { sessionStorage.setItem("muduang.tab", name); } catch { /* ไม่เป็นไร */ }
 }
 document.querySelectorAll("[data-tab]").forEach((b) => b.addEventListener("click", () => showTab(b.dataset.tab)));
@@ -200,7 +204,7 @@ $("#name-form").addEventListener("submit", (e) => {
 $("#birth-form").addEventListener("submit", (e) => {
   e.preventDefault();
   const f = new FormData(e.target);
-  const p = { name: f.get("name").trim(), date: f.get("date"), time: f.get("time") };
+  const p = { name: f.get("name").trim(), date: f.get("date"), time: f.get("time"), place: f.get("place") };
   store.set("profile", p);
   profile = computeProfile(p);
   renderMe();
@@ -211,6 +215,7 @@ $("#edit-birth").addEventListener("click", () => {
   form.name.value = profile.name || "";
   form.date.value = profile.date;
   form.time.value = profile.time || "";
+  form.place.value = placeOf(profile.place).name;
   profile = null;
   renderMe();
 });
@@ -308,6 +313,77 @@ $("#reflect-btns").addEventListener("click", (e) => {
   store.set("reflect", reflect);
   renderReflect(key, log);
 });
+
+// ---------- ดวงละเอียด ----------
+const DASHA_COLOR = {
+  ketu: "#c9b8a6", venus: "#f7b6cf", sun: "#f6a96b", moon: "#d9dcef", mars: "#ef8a8a",
+  rahu: "#a9a9b8", jupiter: "#f3d27a", saturn: "#a99bd6", mercury: "#9fd8b0",
+};
+const ym = (t) => new Date(t).toLocaleDateString("th-TH", { timeZone: TZ, month: "short", year: "numeric" });
+const stars = (n) => "★".repeat(Math.floor(n)) + (n % 1 ? "½" : "");
+
+function renderDetail() {
+  $("#detail-empty").hidden = !!profile;
+  $("#detail-body").hidden = !profile;
+  if (!profile) return;
+  const { y, m, d } = parseDate(profile.date);
+  const place = placeOf(profile.place);
+  const r = detailReading(y, m, d, profile.time || null, place);
+
+  $("#lagna-title").textContent = r.usingMoon ? `จันทรลัคนา ราศี${r.lagna.th}` : `ลัคนาราศี${r.lagna.th}`;
+  $("#lagna-text").textContent = r.lagna.text;
+  $("#lagna-note").hidden = !r.usingMoon;
+  $("#lagna-note").textContent = "ไม่ได้ใส่เวลาเกิด จึงใช้ราศีของดวงจันทร์แทนลัคนา (ตำราอินเดียใช้วิธีนี้กันทั่วไป) ใส่เวลาเกิดจะได้ลัคนาจริงและคำทำนายแม่นขึ้น";
+
+  const ds = r.dasha;
+  if (ds) {
+    $("#md-title").textContent = `ทศา${PLANET_TH[ds.md.lord]}: ${ds.md.title}`;
+    $("#md-dates").textContent = `${ym(ds.md.start)} ถึง ${ym(ds.md.end)}` + (profile.time ? "" : " (ไม่มีเวลาเกิด วันที่อาจคลาดได้หลายเดือน)");
+    $("#md-text").textContent = ds.md.text;
+    $("#md-house").textContent = `ดาว${PLANET_TH[ds.md.lord]}อยู่เรือน ${ds.md.house} ของคุณ ช่วงนี้เรื่อง${HOUSE_TOPICS[ds.md.house]}จะเด่นเป็นพิเศษ`;
+    $("#ad-text").textContent = `${ds.ad.text} (${ym(ds.ad.start)} ถึง ${ym(ds.ad.end)})`;
+    $("#md-next").textContent = ds.next ? `ช่วงใหญ่ถัดไป: ทศา${PLANET_TH[ds.next.lord]} เริ่ม ${ym(ds.next.start)}` : "";
+
+    const birth = new Date(Date.UTC(y, m - 1, d)).getTime();
+    const span = 100 * 365.25 * 86400000;
+    const bar = ds.list
+      .filter((x) => x.end > birth && x.start < birth + span)
+      .map((x) => {
+        const w = ((Math.min(x.end, birth + span) - Math.max(x.start, birth)) / span) * 100;
+        return `<span style="width:${w}%;background:${DASHA_COLOR[x.lord]}" title="${PLANET_TH[x.lord]}"></span>`;
+      })
+      .join("");
+    const nowPct = ((Date.now() - birth) / span) * 100;
+    $("#life-bar").innerHTML = bar + `<i class="now" style="left:${nowPct}%"></i>`;
+  }
+
+  $("#transit-list").innerHTML = ["jupiter", "saturn"]
+    .map((p) => {
+      const t = r.transit[p];
+      const next = t.next ? ` · ย้ายราศีครั้งถัดไป ${ym(t.next.at)}` : "";
+      return `<li class="${t.good ? "good" : "care"}">${t.text}<div class="small muted">ตอนนี้อยู่ราศี${RASHIS[t.sign]}${next}</div></li>`;
+    })
+    .join("");
+
+  $("#area-list").innerHTML = r.areas
+    .map((a) => `
+      <details class="card area">
+        <summary><span>${a.th}</span><span class="stars">${stars(a.score)}<small>${a.summary}</small></span></summary>
+        <ul>${a.lines.map((l) => `<li>${l}</li>`).join("")}</ul>
+        <p class="mission-line"><b>ภารกิจ:</b> ${a.mission}</p>
+      </details>`)
+    .join("");
+
+  $("#lucky-why").textContent = `ตามดาว${PLANET_TH[r.lucky.planet]} เจ้าเรือนลัคนาของคุณ`;
+  $("#lucky-grid").innerHTML = `
+    <div><span class="small muted">เลขนำโชค</span><b>${r.lucky.num}</b></div>
+    <div><span class="small muted">สีนำโชค</span><b>${r.lucky.color}</b></div>
+    <div><span class="small muted">ทิศมงคล</span><b>${r.lucky.dir}</b></div>
+    <div><span class="small muted">วันดี</span><b>${r.lucky.day}</b></div>`;
+
+  $("#planet-table").innerHTML = "<tr><th>ดาว</th><th>ราศี</th><th>เรือน</th></tr>" +
+    r.planetsByHouse.map((x) => `<tr><td>${x.th}</td><td>${RASHIS[x.sign]}</td><td>${x.house}</td></tr>`).join("");
+}
 
 // ---------- องค์เทพ ----------
 const SIGN_NAMES = RASHIS;
@@ -459,6 +535,7 @@ async function saveCard() {
 $("#save-card").addEventListener("click", saveCard);
 
 // ---------- เริ่ม ----------
+$("#place-select").innerHTML = PROVINCES.map((p) => `<option>${p.name}</option>`).join("");
 const saved = store.get("profile", null);
 if (saved && saved.date) profile = computeProfile(saved);
 renderMe();

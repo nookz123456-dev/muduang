@@ -26,6 +26,7 @@
 
 <nav class="tabs" role="tablist">
   <button role="tab" data-tab="me" aria-selected="true">ดวงฉัน</button>
+  <button role="tab" data-tab="detail" aria-selected="false">ละเอียด</button>
   <button role="tab" data-tab="mission" aria-selected="false">ภารกิจ</button>
   <button role="tab" data-tab="deity" aria-selected="false">องค์เทพ</button>
   <button role="tab" data-tab="couple" aria-selected="false">เช็คคู่</button>
@@ -39,6 +40,8 @@
       <label>วันเกิด <input name="date" type="date" required></label>
       <label>เวลาเกิด <span class="muted">(ถ้าไม่รู้ เว้นไว้ได้)</span>
         <input name="time" type="time"></label>
+      <label>จังหวัดที่เกิด <span class="muted">(ใช้คำนวณลัคนา)</span>
+        <select name="place" id="place-select"></select></label>
       <button class="btn" type="submit">ดูสัตว์ประจำฤกษ์</button>
     </form>
 
@@ -110,6 +113,51 @@
         </div>
         <p class="small" id="reflect-done" hidden></p>
       </article>
+    </div>
+  </section>
+
+  <!-- ดวงละเอียด -->
+  <section id="tab-detail" class="panel" hidden>
+    <p class="card empty" id="detail-empty">กรอกวันเกิดที่แท็บ "ดวงฉัน" ก่อนนะ</p>
+    <div id="detail-body" hidden>
+      <article class="card">
+        <p class="muted small">ลัคนา (ราศีที่ขึ้นทางทิศตะวันออกตอนคุณเกิด)</p>
+        <h2 class="h-lagna" id="lagna-title"></h2>
+        <p id="lagna-text"></p>
+        <p class="warn small" id="lagna-note" hidden></p>
+      </article>
+
+      <article class="card">
+        <p class="muted small">ทศา: ช่วงชีวิตที่คุณอยู่ตอนนี้</p>
+        <h3 id="md-title"></h3>
+        <p class="small muted" id="md-dates"></p>
+        <div class="life" id="life-bar"></div>
+        <p class="small muted">แถบสีคือทศาตลอดชีวิต 100 ปี เส้นเข้มคือตอนนี้</p>
+        <p id="md-text"></p>
+        <p id="md-house"></p>
+        <p class="sub-dasha" id="ad-text"></p>
+        <p class="small muted" id="md-next"></p>
+      </article>
+
+      <article class="card">
+        <h3>ดวงปีนี้</h3>
+        <ul class="plain transit" id="transit-list"></ul>
+      </article>
+
+      <h3 class="section-h">ชีวิต 6 ด้าน</h3>
+      <div id="area-list"></div>
+
+      <article class="card">
+        <h3>ของนำโชค</h3>
+        <p class="small muted" id="lucky-why"></p>
+        <div class="lucky" id="lucky-grid"></div>
+      </article>
+
+      <details class="card how">
+        <summary>ตำแหน่งดาวทั้งหมด</summary>
+        <table class="ptable" id="planet-table"></table>
+        <p class="small muted">คำนวณแบบ sidereal (Lahiri) แบ่งเรือนแบบราศีทั้งราศี (whole sign) ตามหลักโหราศาสตร์พระเวท</p>
+      </details>
     </div>
   </section>
 

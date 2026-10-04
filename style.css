@@ -145,3 +145,32 @@ input:focus { outline: none; border-color: var(--accent); }
 .letters .bad { background: #ffe3e3; color: #d0504f; }
 .letters .bad small { color: #d0504f; }
 .letters .good { background: #e6f6ec; }
+
+select {
+  display: block; width: 100%; margin-top: 4px; padding: 10px 12px; font: inherit; color: var(--ink);
+  border: 2px solid var(--line); border-radius: 14px; background: #fffdfb;
+}
+.tabs { gap: 5px; }
+.tabs button { font-size: 0.82rem; padding: 9px 0; }
+.h-lagna { margin: 0 0 6px; color: var(--accent); }
+.life { display: flex; height: 18px; border-radius: 999px; overflow: hidden; position: relative; margin: 10px 0 4px; }
+.life span { height: 100%; }
+.life .now { position: absolute; top: -3px; bottom: -3px; width: 3px; background: var(--ink); border-radius: 2px; }
+.sub-dasha { background: #f7f1fb; border-radius: 14px; padding: 10px 12px; }
+.transit li { padding: 10px 12px; border-radius: 14px; margin-bottom: 8px; background: #f7f1fb; }
+.transit .good { background: #e6f6ec; }
+.transit .care { background: #fff1e3; }
+.section-h { margin: 18px 4px 8px; }
+.area { margin-bottom: 10px; }
+.area summary { display: flex; justify-content: space-between; align-items: center; cursor: pointer; list-style: none; font-weight: 700; }
+.area summary::-webkit-details-marker { display: none; }
+.stars { color: #f2b84b; letter-spacing: 1px; white-space: nowrap; }
+.stars small { color: var(--muted); font-weight: 600; margin-left: 6px; letter-spacing: 0; }
+.area ul { padding-left: 18px; margin: 10px 0; }
+.area li { margin-bottom: 6px; font-size: 0.92rem; }
+.area .mission-line { background: #f3fbf6; border-radius: 12px; padding: 8px 12px; font-size: 0.9rem; }
+.lucky { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.lucky div { background: #f7f1fb; border-radius: 14px; padding: 10px 12px; }
+.lucky b { display: block; font-size: 1.05rem; }
+.ptable { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
+.ptable td, .ptable th { padding: 6px 4px; border-bottom: 1px solid var(--line); text-align: left; }
