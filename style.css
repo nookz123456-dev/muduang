@@ -174,3 +174,12 @@ select {
 .lucky b { display: block; font-size: 1.05rem; }
 .ptable { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
 .ptable td, .ptable th { padding: 6px 4px; border-bottom: 1px solid var(--line); text-align: left; }
+
+.origin { display: flex; gap: 8px; align-items: flex-end; margin: 8px 0 4px; }
+.origin label { flex: 1; margin: 0; font-weight: 600; }
+.origin .btn { width: auto; flex: 0 0 auto; padding: 10px 14px; }
+.mu-group { margin: 14px 0 6px; }
+.mu-group h4 { margin: 0 0 2px; font-size: 1rem; }
+.mu-group .why { margin: 0 0 8px; }
+.places a small { display: block; font-weight: 400; color: var(--muted); font-size: 0.8rem; }
+.places a .pname { flex: 1; min-width: 0; color: var(--ink); white-space: normal; font-size: 0.95rem; }

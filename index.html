@@ -185,11 +185,19 @@
         <p id="ak-text"></p>
       </article>
 
-      <article class="card">
-        <h3>สถานที่ควรไปมู</h3>
-        <ul class="places" id="deity-places"></ul>
-        <p class="small"><b>ของไหว้:</b> <span id="deity-offering"></span></p>
+      <article class="card mumap">
+        <h3>แผนที่มู</h3>
+        <p class="small muted">ที่ที่ดวงของคุณแนะนำ เรียงจากใกล้ไปไกล</p>
+        <div class="origin">
+          <label class="small">เรียงระยะจาก
+            <select id="origin-select"></select></label>
+          <button class="btn ghost" id="use-gps" type="button">ใช้ตำแหน่งฉัน</button>
+        </div>
+        <p class="small muted" id="gps-note" hidden></p>
+        <div id="mu-groups"></div>
+        <p class="small"><b>ของไหว้องค์เทพประจำตัว:</b> <span id="deity-offering"></span></p>
         <p class="small"><b>ภารกิจหลังไหว้ (ทำจริง):</b> <span id="deity-act"></span></p>
+        <p class="small muted">ระยะทางเป็นระยะตรงโดยประมาณจากตัวจังหวัด ดูเส้นทางจริงและเวลาเปิดปิดใน Google Maps</p>
       </article>
 
       <article class="card">

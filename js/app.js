@@ -8,6 +8,7 @@ import { checkName, ROLE_MEANING } from "./taksa.js";
 import { PROVINCES, placeOf } from "./provinces.js";
 import { detailReading } from "./detail.js";
 import { HOUSE_TOPICS } from "./readings.js";
+import { nearest, withDistance, BIRTH_STUPAS, zodiacYear, PLANET_DEITY_TAG } from "./places.js";
 import { DEITIES, ATMAKARAKA, NAK_DEITIES, PLANET_TH } from "./deities.js";
 
 const $ = (s) => document.querySelector(s);
@@ -389,6 +390,74 @@ function renderDetail() {
 const SIGN_NAMES = RASHIS;
 const mapLink = (q) => "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(q);
 
+// ---------- แผนที่มู ----------
+const WISH_TH = { money: "การเงิน", love: "ความรัก", work: "การงาน", health: "สุขภาพ", luck: "โชคลาภ", family: "ครอบครัว" };
+const AREA_WISH = { self: "luck", money: "money", love: "love", work: "work", health: "health", home: "family" };
+let gpsOrigin = null; // ตำแหน่งจากมือถือ ใช้ในเครื่องเท่านั้น ไม่ส่งออก ไม่บันทึก
+
+function currentOrigin() {
+  if (gpsOrigin) return gpsOrigin;
+  return placeOf($("#origin-select").value || profile.place);
+}
+
+function placeItem(p, note) {
+  const dist = p.km === null || p.km === undefined ? "" : p.km < 15 ? "ใกล้มาก" : `~${Math.round(p.km)} กม.`;
+  const sub = [p.province, dist, note].filter(Boolean).join(" · ");
+  return `<li><a href="${mapLink(p.q)}" target="_blank" rel="noopener"><span class="pname">${p.name}<small>${sub}</small></span><span>เปิดแผนที่</span></a></li>`;
+}
+
+function group(title, why, items) {
+  if (!items.length) return "";
+  return `<div class="mu-group"><h4>${title}</h4><p class="small muted why">${why}</p><ul class="places">${items.join("")}</ul></div>`;
+}
+
+function renderMuMap() {
+  const origin = currentOrigin();
+  const { ishta } = profile;
+  const { y, m, d } = parseDate(profile.date);
+  const deity = DEITIES[ishta.deityPlanet];
+  const groups = [];
+
+  groups.push(group(`องค์เทพประจำตัว: ${deity.th}`, "ไปไหว้ขอพรและขอบคุณ",
+    nearest({ tags: [PLANET_DEITY_TAG[ishta.deityPlanet]] }, origin, 3).map((p) => placeItem(p))));
+
+  const r = detailReading(y, m, d, profile.time || null, placeOf(profile.place));
+  if (r.dasha) {
+    const lord = r.dasha.md.lord;
+    const tag = PLANET_DEITY_TAG[lord];
+    const extra = lord === "rahu" ? ["rahu"] : [];
+    groups.push(group(`ทศา${PLANET_TH[lord]}ตอนนี้: ${DEITIES[lord].th}`, `ช่วงชีวิตนี้ดาว${PLANET_TH[lord]}คุมอยู่ ไหว้องค์เทพของดาวนี้ช่วยให้ใจนิ่งตามช่วงชีวิต`,
+      nearest({ tags: [tag, ...extra] }, origin, 2).map((p) => placeItem(p))));
+  }
+
+  const ss = sadeSati(profile.nak.rashi);
+  if (ss.current) {
+    groups.push(group("ช่วงเสาร์ทับ: สะเดาะเคราะห์", "ทำบุญ ปัดเคราะห์ และตั้งใจทำความดีให้ต่อเนื่อง",
+      nearest({ tags: ["remedy"] }, origin, 2).map((p) => placeItem(p))));
+  }
+
+  const weakest = [...r.areas].sort((a, b) => a.score - b.score)[0];
+  const wish = AREA_WISH[weakest.key];
+  groups.push(group(`เติมด้าน${weakest.th}`, `ด้าน${weakest.th}ได้คะแนนน้อยที่สุดในดวงคุณ (${weakest.score}/5) ไปขอพรเรื่อง${WISH_TH[wish]}`,
+    nearest({ wishes: [wish] }, origin, 2).map((p) => placeItem(p, `ขอเรื่อง${WISH_TH[wish]}`))));
+
+  const zy = zodiacYear(y, m, d);
+  const st = BIRTH_STUPAS[zy];
+  const stItems = [];
+  if (st.province) stItems.push(placeItem(withDistance({ ...st, tags: [], wishes: [] }, origin)));
+  else {
+    stItems.push(`<li class="small muted">${st.name} อยู่ต่างประเทศ</li>`);
+    if (st.alt) stItems.push(placeItem(withDistance({ ...st.alt, tags: [], wishes: [] }, origin), "ไหว้แทนในไทย"));
+  }
+  const beforeSongkran = m < 4 || (m === 4 && d < 16);
+  const calYear = BIRTH_STUPAS[(((y - 4) % 12) + 12) % 12];
+  const why = "ตามตำราล้านนา (นับปีใหม่ที่สงกรานต์) ไหว้แล้วเป็นสิริมงคลกับชีวิต" +
+    (beforeSongkran ? ` · ถ้านับปีแบบปฏิทิน (1 ม.ค.) คุณจะเป็นปี${calYear.year} พระธาตุคือ${calYear.name}` : "");
+  groups.push(group(`พระธาตุประจำปีเกิด: ปี${st.year}`, why, stItems));
+
+  $("#mu-groups").innerHTML = groups.join("");
+}
+
 function renderDeity() {
   $("#deity-empty").hidden = !!profile;
   $("#deity-body").hidden = !profile;
@@ -415,9 +484,8 @@ function renderDeity() {
   $("#ak-title").textContent = ak.title;
   $("#ak-text").textContent = ak.text;
 
-  $("#deity-places").innerHTML = deity.places
-    .map((pl) => `<li><a href="${mapLink(pl.q)}" target="_blank" rel="noopener">${pl.name}<span>เปิดแผนที่</span></a></li>`)
-    .join("");
+  if (!gpsOrigin) $("#origin-select").value = store.get("origin", null) || placeOf(profile.place).name;
+  renderMuMap();
   $("#deity-offering").textContent = deity.offering;
   $("#deity-act").textContent = deity.act;
 
@@ -536,6 +604,28 @@ $("#save-card").addEventListener("click", saveCard);
 
 // ---------- เริ่ม ----------
 $("#place-select").innerHTML = PROVINCES.map((p) => `<option>${p.name}</option>`).join("");
+$("#origin-select").innerHTML = PROVINCES.map((p) => `<option>${p.name}</option>`).join("");
+$("#origin-select").addEventListener("change", () => {
+  gpsOrigin = null;
+  $("#gps-note").hidden = true;
+  store.set("origin", $("#origin-select").value);
+  renderMuMap();
+});
+$("#use-gps").addEventListener("click", () => {
+  const note = $("#gps-note");
+  note.hidden = false;
+  if (!navigator.geolocation) { note.textContent = "เบราว์เซอร์นี้ไม่รองรับการหาตำแหน่ง เลือกจังหวัดแทนได้เลย"; return; }
+  note.textContent = "กำลังหาตำแหน่ง...";
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      gpsOrigin = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+      note.textContent = "เรียงจากตำแหน่งปัจจุบันของคุณแล้ว (ใช้คำนวณในเครื่องเท่านั้น ไม่ได้ส่งหรือบันทึกไว้)";
+      renderMuMap();
+    },
+    () => { note.textContent = "หาตำแหน่งไม่ได้หรือไม่ได้อนุญาต เลือกจังหวัดแทนได้เลย"; },
+    { timeout: 10000, maximumAge: 600000 },
+  );
+});
 const saved = store.get("profile", null);
 if (saved && saved.date) profile = computeProfile(saved);
 renderMe();

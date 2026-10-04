@@ -17,6 +17,9 @@ export function hash(str) {
 // ต้องคืนภารกิจ 3 ข้อ และวันเดียวกันต้องได้ชุดเดิมเสมอ (รีเฟรชแล้วไม่เปลี่ยน)
 export function pickDailyMissions(theme, dayKey, birthIndex) {
   const pool = MISSIONS.filter((m) => m.theme === theme);
-  // TODO(ผู้ใช้): ตอนนี้ได้ 3 ข้อแรกของธีมทุกครั้ง ทำให้วันธีมเดียวกันเห็นภารกิจซ้ำ
-  return pool.slice(0, 3);
+  // หมุนตามจำนวนวัน: เลื่อนวันละ 4 ข้อ (ธีมละ 6 ข้อ) ได้ 3 ชุดวนกัน แต่ละชุดซ้ำกับวันก่อนไม่เกิน 1 ข้อ
+  // ฤกษ์เกิดกับ hash ช่วยให้คนต่างฤกษ์เริ่มคนละจุด
+  const dayNo = Math.floor(Date.parse(dayKey + "T00:00:00Z") / 86400000);
+  const start = (dayNo * 4 + birthIndex + (hash(theme) % pool.length)) % pool.length;
+  return [0, 1, 2].map((i) => pool[(start + i) % pool.length]);
 }
