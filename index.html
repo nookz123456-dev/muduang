@@ -26,7 +26,8 @@
 
 <nav class="tabs" role="tablist">
   <button role="tab" data-tab="me" aria-selected="true">ดวงฉัน</button>
-  <button role="tab" data-tab="mission" aria-selected="false">ภารกิจมู</button>
+  <button role="tab" data-tab="mission" aria-selected="false">ภารกิจ</button>
+  <button role="tab" data-tab="deity" aria-selected="false">องค์เทพ</button>
   <button role="tab" data-tab="couple" aria-selected="false">เช็คคู่</button>
 </nav>
 
@@ -59,6 +60,28 @@
         <button class="btn" data-goto="mission">ไปทำภารกิจมูของวันนี้</button>
       </article>
 
+      <article class="card saturn">
+        <p class="muted small">ดาวเสาร์จร (สาเฑสาตี)</p>
+        <h3 id="ss-title"></h3>
+        <div class="ss-bar" id="ss-bar" hidden><span id="ss-fill"></span></div>
+        <p class="small muted" id="ss-dates"></p>
+        <p id="ss-text"></p>
+        <p class="small" id="ss-mu" hidden></p>
+      </article>
+
+      <article class="card namecheck">
+        <h3>เช็คชื่อมงคล (ทักษา)</h3>
+        <p class="muted small" id="nc-sub"></p>
+        <form id="name-form" class="inline">
+          <input name="n" maxlength="40" placeholder="พิมพ์ชื่อภาษาไทย" required>
+          <button class="btn" type="submit">เช็ค</button>
+        </form>
+        <div id="nc-result" hidden>
+          <p class="letters" id="nc-letters"></p>
+          <p id="nc-verdict"></p>
+        </div>
+      </article>
+
       <div class="row">
         <button class="btn ghost" id="save-card">เซฟการ์ดไปแชร์</button>
         <button class="btn ghost" id="edit-birth">แก้วันเกิด</button>
@@ -87,6 +110,49 @@
         </div>
         <p class="small" id="reflect-done" hidden></p>
       </article>
+    </div>
+  </section>
+
+  <!-- องค์เทพ -->
+  <section id="tab-deity" class="panel" hidden>
+    <p class="card empty" id="deity-empty">กรอกวันเกิดที่แท็บ "ดวงฉัน" ก่อนนะ</p>
+    <div id="deity-body" hidden>
+      <article class="card deity-card" id="deity-card">
+        <svg class="lotus" viewBox="0 0 120 80" aria-hidden="true">
+          <circle cx="60" cy="34" r="30" fill="var(--deity)"/>
+          <path d="M60 10c10 14 10 34 0 50-10-16-10-36 0-50z" fill="#f29cbd"/>
+          <path d="M60 60c-6-14-20-24-36-26 4 16 18 26 36 26zM60 60c6-14 20-24 36-26-4 16-18 26-36 26z" fill="#f7bfd4"/>
+          <path d="M20 62h80" stroke="#e7c873" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+        <p class="muted small">องค์เทพประจำตัวของคุณ</p>
+        <h2 id="deity-name"></h2>
+        <p class="muted small" id="deity-en"></p>
+        <p id="deity-blessing"></p>
+        <p class="warn small" id="deity-odds" hidden></p>
+      </article>
+
+      <article class="card">
+        <p class="muted small" id="ak-line"></p>
+        <h3 id="ak-title"></h3>
+        <p id="ak-text"></p>
+      </article>
+
+      <article class="card">
+        <h3>สถานที่ควรไปมู</h3>
+        <ul class="places" id="deity-places"></ul>
+        <p class="small"><b>ของไหว้:</b> <span id="deity-offering"></span></p>
+        <p class="small"><b>ภารกิจหลังไหว้ (ทำจริง):</b> <span id="deity-act"></span></p>
+      </article>
+
+      <article class="card">
+        <h3>เทพเสริมดวง</h3>
+        <ul class="plain" id="deity-extra"></ul>
+      </article>
+
+      <details class="card how">
+        <summary>คำนวณยังไง</summary>
+        <p class="small" id="deity-how"></p>
+      </details>
     </div>
   </section>
 

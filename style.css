@@ -115,3 +115,33 @@ input:focus { outline: none; border-color: var(--accent); }
 .bar span { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
 
 .foot { text-align: center; color: var(--muted); font-size: 0.78rem; padding-top: 10px; padding-bottom: 32px; }
+
+.deity-card { text-align: center; }
+.lotus { width: 150px; height: 100px; display: block; margin: 0 auto; }
+.deity-card h2 { margin: 0; font-size: 1.6rem; color: var(--ink); }
+.places, .plain { list-style: none; padding: 0; margin: 0 0 10px; }
+.places li { margin-bottom: 8px; }
+.places a {
+  display: flex; justify-content: space-between; gap: 10px; align-items: center; text-decoration: none;
+  color: var(--ink); background: #f7f1fb; padding: 10px 14px; border-radius: 14px; font-weight: 600;
+}
+.places a span { color: var(--accent); font-size: 0.85rem; white-space: nowrap; }
+.plain li { margin-bottom: 6px; }
+.how summary { cursor: pointer; font-weight: 600; color: var(--accent); }
+.tabs button { font-size: 0.92rem; }
+
+.saturn h3, .namecheck h3 { margin: 0 0 6px; }
+.ss-bar { height: 10px; border-radius: 999px; background: #f4ecf9; overflow: hidden; margin: 8px 0 4px; }
+.ss-bar span { display: block; height: 100%; background: linear-gradient(90deg, #9b8ad8, #6c5fb3); }
+.inline { display: flex; gap: 8px; }
+.inline input { margin: 0; flex: 1; }
+.inline .btn { width: auto; flex: 0 0 auto; }
+.letters { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 6px; }
+.letters span {
+  display: inline-flex; flex-direction: column; align-items: center; min-width: 46px; padding: 6px 8px;
+  border-radius: 12px; background: #f7f1fb; font-size: 1.2rem; font-weight: 700; line-height: 1.3;
+}
+.letters small { font-size: 0.68rem; font-weight: 600; color: var(--muted); }
+.letters .bad { background: #ffe3e3; color: #d0504f; }
+.letters .bad small { color: #d0504f; }
+.letters .good { background: #e6f6ec; }

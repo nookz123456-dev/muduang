@@ -2,6 +2,10 @@ import { birthNakshatra, nakshatraAt, taraOf, thaiBirthDay, thaiDate } from "./a
 import { ANIMALS, NAKSHATRAS, RASHIS, TARAS, THEMES, THAI_DAYS } from "./data.js";
 import { gunaMilan } from "./match.js";
 import { pickDailyMissions } from "./missions.js";
+import { birthIshta } from "./ishta.js";
+import { sadeSati } from "./sadesati.js";
+import { checkName, ROLE_MEANING } from "./taksa.js";
+import { DEITIES, ATMAKARAKA, NAK_DEITIES, PLANET_TH } from "./deities.js";
 
 const $ = (s) => document.querySelector(s);
 const imgOf = (animal) => `img/${animal}.jpg`;
@@ -52,7 +56,9 @@ function computeProfile(p) {
   const { y, m, d } = parseDate(p.date);
   const nak = birthNakshatra(y, m, d, p.time || null);
   const info = NAKSHATRAS[nak.index];
-  return { ...p, nak, info, animal: ANIMALS[info.animal], day: THAI_DAYS[thaiBirthDay(y, m, d, p.time)] };
+  const ishta = birthIshta(y, m, d, p.time || null);
+  const dayIdx = thaiBirthDay(y, m, d, p.time);
+  return { ...p, nak, info, ishta, dayIdx, animal: ANIMALS[info.animal], day: THAI_DAYS[dayIdx] };
 }
 
 // ฤกษ์ของวันนี้: ใช้ดวงจันทร์ตอน 06:00 (วันไทยเริ่มตอนพระอาทิตย์ขึ้น) ให้ทั้งวันได้ผลเดียวกัน
@@ -70,6 +76,7 @@ function showTab(name) {
   document.querySelectorAll(".tabs button").forEach((b) => b.setAttribute("aria-selected", b.dataset.tab === name));
   document.querySelectorAll(".panel").forEach((p) => (p.hidden = p.id !== "tab-" + name));
   if (name === "mission") renderMissions();
+  if (name === "deity") renderDeity();
   try { sessionStorage.setItem("muduang.tab", name); } catch { /* ไม่เป็นไร */ }
 }
 document.querySelectorAll("[data-tab]").forEach((b) => b.addEventListener("click", () => showTab(b.dataset.tab)));
@@ -115,7 +122,80 @@ function renderMe() {
   $("#today-text").textContent = t.tara.text;
   $("#today-tech").textContent =
     `ดวงจันทร์วันนี้อยู่ฤกษ์${NAKSHATRAS[t.moon.index].th} นับจากฤกษ์เกิดได้ตารา ${t.taraNo} "${t.tara.name}"`;
+  renderSaturn();
+  renderNameSub();
 }
+
+// ---------- เสาร์ทับ ----------
+const thaiShort = (t) => new Date(t).toLocaleDateString("th-TH", { timeZone: TZ, day: "numeric", month: "short", year: "numeric" });
+function untilText(ms) {
+  const months = Math.max(0, Math.round(ms / (30.44 * 86400000)));
+  const y = Math.floor(months / 12), m = months % 12;
+  return (y ? `${y} ปี ` : "") + (m ? `${m} เดือน` : "") || "ไม่ถึงเดือน";
+}
+
+function renderSaturn() {
+  const ss = sadeSati(profile.nak.rashi);
+  const now = Date.now();
+  const mu = $("#ss-mu");
+  if (ss.current) {
+    const { start, end } = ss.current;
+    const phases = ["ดาวเสาร์ถอยออกไปพักชั่วคราว", "ช่วงต้น", "ช่วงกลาง (หนักที่สุด)", "ช่วงท้าย ใกล้พ้นแล้ว"];
+    $("#ss-title").textContent = `อยู่ในช่วงเสาร์ทับ: ${phases[ss.phase]}`;
+    $("#ss-bar").hidden = false;
+    $("#ss-fill").style.width = `${((now - start) / (end - start)) * 100}%`;
+    $("#ss-dates").textContent = `เริ่ม ${thaiShort(start)} · พ้น ${thaiShort(end)} (อีก ${untilText(end - now)})`;
+    $("#ss-text").textContent =
+      "ตำราว่าเป็นช่วงที่ชีวิตสอนเรื่องความอดทนและความรับผิดชอบ งานหนักขึ้น ผลมาช้า แต่สิ่งที่สร้างในช่วงนี้จะอยู่ยาว ไม่ใช่ช่วงซวย แต่เป็นช่วงฝึก";
+    mu.hidden = false;
+    mu.innerHTML = "<b>มู:</b> ทำบุญวันเสาร์ ไหว้พระประจำวันเสาร์ (ปางนาคปรก) · <b>ทำจริง:</b> ตั้งวินัย 1 ข้อแล้วทำทุกวัน และช่วยงานผู้สูงอายุหรือคนที่ลำบากกว่า ตำราอินเดียถือว่าเป็นวิธีแก้ดาวเสาร์ที่ดีที่สุด";
+  } else {
+    $("#ss-title").textContent = "ตอนนี้ไม่อยู่ในช่วงเสาร์ทับ";
+    $("#ss-bar").hidden = true;
+    $("#ss-dates").textContent =
+      (ss.last ? `รอบที่แล้วพ้นเมื่อ ${thaiShort(ss.last.end)} · ` : "") +
+      (ss.next ? `รอบถัดไป ${thaiShort(ss.next.start)} ถึง ${thaiShort(ss.next.end)}` : "");
+    $("#ss-text").textContent = "ช่วงนี้ดาวเสาร์ไม่กดดันดวงจันทร์ของคุณ เป็นจังหวะดีที่จะวางรากฐานระยะยาวไว้ก่อนรอบหน้ามาถึง";
+    mu.hidden = true;
+  }
+}
+
+// ---------- ชื่อมงคล (ทักษา) ----------
+function renderNameSub() {
+  const r = checkName("", profile.dayIdx);
+  $("#nc-sub").textContent = `คุณเกิดวัน${profile.day.th} อักษรกาลกิณีคือ ` +
+    (r.kalakiniIsVowel ? "สระทุกตัว" : [...r.kalakiniLetters].join(" "));
+}
+
+$("#name-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const r = checkName(e.target.n.value, profile.dayIdx);
+  $("#nc-result").hidden = false;
+  if (!r.chars.length) {
+    $("#nc-letters").innerHTML = "";
+    $("#nc-verdict").textContent = "พิมพ์เป็นภาษาไทยนะ ทักษาใช้กับอักษรไทยเท่านั้น";
+    return;
+  }
+  $("#nc-letters").innerHTML = r.chars
+    .map((c) => {
+      const cls = c.role === "กาลกิณี" ? "bad" : ["เดช", "ศรี", "มนตรี"].includes(c.role) ? "good" : "";
+      const shown = /[ัิ-ฺ็]/.test(c.ch) ? "◌" + c.ch : c.ch; // สระบน/ล่างวางบนวงกลมจุด
+      return `<span class="${cls}">${shown}<small>${c.role}</small></span>`;
+    })
+    .join("");
+  const goods = [...new Set(r.good.map((c) => c.role))];
+  const goodText = goods.length ? ` มีอักษร${goods.join(" ")} ช่วยเสริมเรื่อง${goods.map((g) => ROLE_MEANING[g]).join(", ")}` : "";
+  let verdict;
+  if (!r.kalakini.length) verdict = `ไม่มีอักษรกาลกิณีเลย ถือเป็นชื่อที่ดีตามตำรา${goodText}`;
+  else if (r.kalakiniIsVowel)
+    verdict = `คนเกิดวันจันทร์ ตำราถือสระเป็นกาลกิณี แต่ชื่อไทยเลี่ยงสระได้ยากมาก ส่วนใหญ่จึงดูแค่อักษรตัวแรก` +
+      (r.first.role === "กาลกิณี" ? " ซึ่งชื่อนี้ขึ้นต้นด้วยสระ" : ` ชื่อนี้ขึ้นต้นด้วย "${r.first.ch}" (${r.first.role}) ไม่มีปัญหา`) + goodText;
+  else
+    verdict = `มีอักษรกาลกิณี ${r.kalakini.length} ตัว (${r.kalakini.map((c) => c.ch).join(" ")}) ตำราแนะนำให้เลี่ยงในชื่อเล่น ชื่อร้าน หรือชื่อแบรนด์ ` +
+      `ถ้าเป็นชื่อจริงที่ใช้มานานแล้วไม่ต้องกังวลมาก การกระทำของเราสำคัญกว่าตัวอักษร${goodText}`;
+  $("#nc-verdict").textContent = verdict;
+});
+
 
 $("#birth-form").addEventListener("submit", (e) => {
   e.preventDefault();
@@ -228,6 +308,53 @@ $("#reflect-btns").addEventListener("click", (e) => {
   store.set("reflect", reflect);
   renderReflect(key, log);
 });
+
+// ---------- องค์เทพ ----------
+const SIGN_NAMES = RASHIS;
+const mapLink = (q) => "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(q);
+
+function renderDeity() {
+  $("#deity-empty").hidden = !!profile;
+  $("#deity-body").hidden = !profile;
+  if (!profile) return;
+
+  const { ishta, info, day } = profile;
+  const deity = DEITIES[ishta.deityPlanet];
+  const ak = ATMAKARAKA[ishta.ak];
+  $("#deity-card").style.setProperty("--deity", deity.color);
+  $("#deity-name").textContent = deity.th;
+  $("#deity-en").textContent = `${deity.en} · ชี้โดยดาว${PLANET_TH[ishta.deityPlanet]}`;
+  $("#deity-blessing").textContent = deity.blessing;
+
+  const odds = $("#deity-odds");
+  if (ishta.certain) odds.hidden = true;
+  else {
+    odds.hidden = false;
+    odds.textContent = `ไม่ได้ใส่เวลาเกิด: มีโอกาส ${Math.round(ishta.odds * 100)}% เป็นองค์นี้` +
+      (ishta.alts.length ? ` อีกทางคือ ${ishta.alts.map((a) => `${DEITIES[a.planet].th} ${Math.round(a.odds * 100)}%`).join(", ")}` : "") +
+      " ใส่เวลาเกิดที่แท็บดวงฉันจะรู้แน่ชัด";
+  }
+
+  $("#ak-line").textContent = `คำทำนายจากอาตมการกะ: ดาว${PLANET_TH[ishta.ak]} ดาวแห่งดวงวิญญาณของคุณ`;
+  $("#ak-title").textContent = ak.title;
+  $("#ak-text").textContent = ak.text;
+
+  $("#deity-places").innerHTML = deity.places
+    .map((pl) => `<li><a href="${mapLink(pl.q)}" target="_blank" rel="noopener">${pl.name}<span>เปิดแผนที่</span></a></li>`)
+    .join("");
+  $("#deity-offering").textContent = deity.offering;
+  $("#deity-act").textContent = deity.act;
+
+  $("#deity-extra").innerHTML = `
+    <li><b>เทพประจำฤกษ์${info.th}:</b> ${NAK_DEITIES[info.index]}</li>
+    <li><b>พระประจำวันเกิด (วัน${day.th}):</b> ${day.buddha}</li>`;
+
+  $("#deity-how").textContent =
+    `ดาวที่องศาในราศีสูงสุดตอนเกิดคือดาว${PLANET_TH[ishta.ak]} (อาตมการกะ) อยู่ราศี${SIGN_NAMES[ishta.karakamsha]}ในผังนวางศ์ ` +
+    `นับไปเรือนที่ 12 คือราศี${SIGN_NAMES[ishta.twelfth]} ` +
+    (ishta.via === "occupant" ? `ซึ่งมีดาว${PLANET_TH[ishta.deityPlanet]}สถิตอยู่` : `ไม่มีดาวอยู่ จึงใช้เจ้าเรือนคือดาว${PLANET_TH[ishta.deityPlanet]}`) +
+    ` ตำราปราศร (BPHS) ให้ดาวนี้ชี้ไปที่${deity.th} หลักการจับคู่ดาวกับเทพแต่ละสำนักอาจต่างกันเล็กน้อย`;
+}
 
 // ---------- เช็คคู่ ----------
 const COUPLE_MISSIONS = {
