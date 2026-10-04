@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>มูดวง</title>
+<meta name="description" content="ดูดวงสัตว์ประจำฤกษ์ตามโหราศาสตร์อินเดีย พร้อมภารกิจมูที่ทำให้ชีวิตดีขึ้นจริง">
+<meta property="og:type" content="website">
+<meta property="og:title" content="มูดวง - คุณคือสัตว์ตัวไหนในฤกษ์เกิด">
+<meta property="og:description" content="ดูดวงให้รู้ แล้วมูให้ชีวิตดีขึ้นจริง พร้อมเช็คคะแนนคู่เต็ม 36">
+<meta property="og:url" content="https://nookz123456-dev.github.io/muduang/">
+<meta property="og:image" content="https://nookz123456-dev.github.io/muduang/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <h1 class="logo">มูดวง</h1>
+  <p class="tag">ดูดวงให้รู้ แล้วมูให้ชีวิตดีขึ้นจริง</p>
+</header>
+
+<nav class="tabs" role="tablist">
+  <button role="tab" data-tab="me" aria-selected="true">ดวงฉัน</button>
+  <button role="tab" data-tab="mission" aria-selected="false">ภารกิจมู</button>
+  <button role="tab" data-tab="couple" aria-selected="false">เช็คคู่</button>
+</nav>
+
+<main>
+  <!-- ดวงฉัน -->
+  <section id="tab-me" class="panel">
+    <form id="birth-form" class="card form">
+      <label>ชื่อเล่น <input name="name" maxlength="20" placeholder="เช่น น้ำหวาน"></label>
+      <label>วันเกิด <input name="date" type="date" required></label>
+      <label>เวลาเกิด <span class="muted">(ถ้าไม่รู้ เว้นไว้ได้)</span>
+        <input name="time" type="time"></label>
+      <button class="btn" type="submit">ดูสัตว์ประจำฤกษ์</button>
+    </form>
+
+    <div id="me-result" hidden>
+      <article class="card mascot-card" id="mascot-card">
+        <div class="mascot-wrap"><img id="mascot-img" alt=""></div>
+        <p class="muted small" id="nak-line"></p>
+        <h2 id="animal-name"></h2>
+        <p id="animal-trait"></p>
+        <div class="chips" id="chips"></div>
+        <p class="warn small" id="uncertain" hidden></p>
+      </article>
+
+      <article class="card today">
+        <p class="muted small" id="today-date"></p>
+        <h3 id="today-mood"></h3>
+        <p id="today-text"></p>
+        <p class="small muted" id="today-tech"></p>
+        <button class="btn" data-goto="mission">ไปทำภารกิจมูของวันนี้</button>
+      </article>
+
+      <div class="row">
+        <button class="btn ghost" id="save-card">เซฟการ์ดไปแชร์</button>
+        <button class="btn ghost" id="edit-birth">แก้วันเกิด</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ภารกิจมู -->
+  <section id="tab-mission" class="panel" hidden>
+    <p class="card empty" id="mission-empty">กรอกวันเกิดที่แท็บ "ดวงฉัน" ก่อนนะ</p>
+    <div id="mission-body" hidden>
+      <div class="card streak">
+        <div><span class="big" id="streak-num">0</span> วันติด</div>
+        <div class="muted small" id="streak-sub"></div>
+      </div>
+      <p class="muted small center" id="mission-theme"></p>
+      <ul class="missions" id="mission-list"></ul>
+
+      <article class="card reflect">
+        <h3>สัปดาห์นี้ชีวิตดีขึ้นไหม</h3>
+        <p class="muted small" id="reflect-sub"></p>
+        <div class="row" id="reflect-btns">
+          <button class="btn ghost" data-score="1">เหมือนเดิม</button>
+          <button class="btn ghost" data-score="2">ดีขึ้นนิดนึง</button>
+          <button class="btn ghost" data-score="3">ดีขึ้นชัดเจน</button>
+        </div>
+        <p class="small" id="reflect-done" hidden></p>
+      </article>
+    </div>
+  </section>
+
+  <!-- เช็คคู่ -->
+  <section id="tab-couple" class="panel" hidden>
+    <form id="couple-form" class="card form">
+      <div class="pair">
+        <fieldset>
+          <legend>คนที่ 1</legend>
+          <input name="d1" type="date" required>
+          <input name="t1" type="time" aria-label="เวลาเกิดคนที่ 1">
+        </fieldset>
+        <fieldset>
+          <legend>คนที่ 2</legend>
+          <input name="d2" type="date" required>
+          <input name="t2" type="time" aria-label="เวลาเกิดคนที่ 2">
+        </fieldset>
+      </div>
+      <p class="muted small">เวลาเกิดไม่ใส่ก็ได้ ใส่แล้วจะแม่นขึ้น</p>
+      <button class="btn" type="submit">ดูคะแนนความเข้ากัน</button>
+    </form>
+
+    <div id="couple-result" hidden>
+      <article class="card couple-card">
+        <div class="duo">
+          <img id="c-img1" alt=""><span class="heart">+</span><img id="c-img2" alt="">
+        </div>
+        <div class="score"><span id="c-total"></span><small>/36</small></div>
+        <h3 id="c-verdict"></h3>
+        <p id="c-text"></p>
+      </article>
+      <ul class="card parts" id="c-parts"></ul>
+      <article class="card">
+        <h3>ภารกิจคู่</h3>
+        <p id="c-mission"></p>
+      </article>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  คำนวณตามตำราโหราศาสตร์พระเวท (Lahiri ayanamsa) เพื่อความบันเทิงและเป็นแรงบันดาลใจ
+  ไม่ควรใช้แทนการตัดสินใจเรื่องสุขภาพ การเงิน หรือชีวิตคู่
+</footer>
+
+<canvas id="share-canvas" width="1080" height="1350" hidden></canvas>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
