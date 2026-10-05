@@ -400,11 +400,20 @@ const SUIT_SVG = {
   major: '<svg viewBox="0 0 40 40"><path d="M20 3l4 12 13 1-10 8 4 13-11-8-11 8 4-13L3 16l13-1z" fill="#f2b84b"/><circle cx="20" cy="20" r="4" fill="#fff"/></svg>',
 };
 
-function cardHTML({ card, reversed }, big = false) {
-  const top = card.major ? ROMAN[card.num] : RANK_SHORT[card.rank];
-  const bg = card.major ? "" : `style="--suit:${SUITS[card.suit].color}"`;
-  return `<div class="tcard ${card.major ? "major" : ""} ${reversed ? "rev" : ""} ${big ? "big" : ""}" ${bg} title="${card.en}">
-    <span class="tn">${top}</span>${SUIT_SVG[card.major ? "major" : card.suit]}<span class="tname">${card.th}</span></div>`;
+function cardFace({ card, reversed }, big = false) {
+  const cls = `tcard ${reversed ? "rev" : ""} ${big ? "big" : ""}`;
+  if (card.major) {
+    return `<div class="${cls} art" title="${card.en}"><img src="img/tarot/M${card.num}.jpg" alt="${card.en}"></div>`;
+  }
+  return `<div class="${cls}" style="--suit:${SUITS[card.suit].color}" title="${card.en}">
+    <span class="tn">${RANK_SHORT[card.rank]}</span>${SUIT_SVG[card.suit]}<span class="tname">${card.th}</span></div>`;
+}
+
+// ไพ่พลิกได้: หลังไพ่ก่อน แล้วหมุนเปิดหน้า
+function cardHTML(c, big = false, flipped = true) {
+  return `<div class="flip ${big ? "big" : ""} ${flipped ? "flipped" : ""}">
+    <div class="side back"><img src="img/tarot/back.jpg" alt="หลังไพ่"></div>
+    <div class="side front">${cardFace(c, big)}</div></div>`;
 }
 
 const cardMeaning = ({ card, reversed }) => (reversed ? card.rev : card.up);
@@ -422,10 +431,26 @@ function renderOracle() {
   const key = dayKeyOf(new Date());
   const birthIndex = profile ? profile.nak.index : 0;
   const daily = dailyCard(key, birthIndex, hash);
-  $("#daily-card").innerHTML = cardHTML(daily, true);
-  $("#daily-title").textContent = cardTitle(daily);
-  $("#daily-text").textContent = cardMeaning(daily);
-  $("#daily-mission").innerHTML = missionFor(daily.card.theme, `daily:${key}:${birthIndex}`);
+  const opened = store.get("dailyOpened", null) === key;
+  $("#daily-card").innerHTML = cardHTML(daily, true, opened);
+  const showDaily = () => {
+    $("#daily-title").textContent = cardTitle(daily);
+    $("#daily-text").textContent = cardMeaning(daily);
+    $("#daily-mission").hidden = false;
+    $("#daily-mission").innerHTML = missionFor(daily.card.theme, `daily:${key}:${birthIndex}`);
+  };
+  if (opened) showDaily();
+  else {
+    $("#daily-title").textContent = "แตะไพ่เพื่อเปิด";
+    $("#daily-text").textContent = "ตั้งจิตถึงวันนี้สักครู่ แล้วแตะที่ไพ่";
+    $("#daily-mission").hidden = true;
+    $("#daily-card").onclick = () => {
+      $("#daily-card .flip").classList.add("flipped");
+      store.set("dailyOpened", key);
+      setTimeout(showDaily, 650);
+      $("#daily-card").onclick = null;
+    };
+  }
 
   const spread = store.get("spread", null);
   if (spread && spread.day === key) showSpread(spread);
@@ -438,11 +463,16 @@ function renderOracle() {
   showSiamsiFor(siamsiTopic);
 }
 
-function showSpread(sp) {
+function showSpread(sp, animate = false) {
   const cards = sp.cards.map(({ id, reversed }) => ({ card: CARDS.find((c) => c.id === id), reversed }));
   $("#spread-result").hidden = false;
   $("#spread-q").textContent = sp.q ? `คำถาม: ${sp.q}` : "";
-  $("#spread-cards").innerHTML = cards.map((c, i) => `<div>${cardHTML(c)}<div class="tlabel">${SPREAD_POS[i]}</div></div>`).join("");
+  $("#spread-cards").innerHTML = cards.map((c, i) => `<div>${cardHTML(c, false, !animate)}<div class="tlabel">${SPREAD_POS[i]}</div></div>`).join("");
+  $("#spread-read").style.opacity = animate ? 0 : 1;
+  if (animate) {
+    document.querySelectorAll("#spread-cards .flip").forEach((f, i) => setTimeout(() => f.classList.add("flipped"), 500 + i * 550));
+    setTimeout(() => ($("#spread-read").style.opacity = 1), 500 + 3 * 550 + 300);
+  }
   $("#spread-read").innerHTML = cards.map((c, i) => `<li><b>${SPREAD_POS[i]}: ${cardTitle(c)}</b><br>${cardMeaning(c)}</li>`).join("") +
     `<li class="mission-line" style="list-style:none;margin-left:-18px">${missionFor(cards[2].card.theme, `spread:${sp.day}`)}</li>`;
 }
@@ -454,6 +484,7 @@ $("#spread-form").addEventListener("submit", (e) => {
   const sp = { day: key, q: e.target.q.value.trim(), cards };
   store.set("spread", sp);
   renderOracle();
+  showSpread(sp, true);
 });
 
 function showSiamsiFor(topic) {

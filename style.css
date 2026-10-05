@@ -219,3 +219,16 @@ select {
 .stick-no { font-size: 1.4rem; font-weight: 700; color: var(--accent); margin: 8px 0 0; }
 .verse { font-style: italic; color: var(--muted); }
 .mission-line { background: #f3fbf6; border-radius: 12px; padding: 8px 12px; }
+
+/* ไพ่พลิก 3D: ขนาดสัดส่วน 2:3 ตามภาพไพ่ */
+.tarot-row { perspective: 900px; }
+.flip { position: relative; width: 96px; height: 144px; transform-style: preserve-3d; transition: transform 0.7s ease; cursor: pointer; }
+.flip.big { width: 136px; height: 204px; }
+.flip.flipped { transform: rotateY(180deg); cursor: default; }
+.flip .side { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.flip .front { transform: rotateY(180deg); }
+.flip .back img, .tcard.art img { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; display: block; }
+.flip .back img { box-shadow: 0 4px 14px rgba(120, 90, 170, 0.25); }
+.flip .tcard { width: 100%; height: 100%; }
+.tcard.art { padding: 0; border: 0; background: none; }
+#spread-read { transition: opacity 0.5s; }
