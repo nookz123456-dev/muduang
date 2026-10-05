@@ -2,7 +2,7 @@ import { birthNakshatra, nakshatraAt, taraOf, thaiBirthDay, thaiDate } from "./a
 import { ANIMALS, NAKSHATRAS, RASHIS, TARAS, THEMES, THAI_DAYS, MISSIONS } from "./data.js";
 import { gunaMilan } from "./match.js";
 import { pickDailyMissions, hash } from "./missions.js";
-import { CARDS, SUITS, SPREAD_POS, drawCards, dailyCard } from "./tarot.js";
+import { CARDS, SPREAD_POS, drawCards, dailyCard } from "./tarot.js";
 import { STICKS, TOPICS, shakeStick } from "./siamsi.js";
 import { birthIshta } from "./ishta.js";
 import { sadeSati } from "./sadesati.js";
@@ -390,23 +390,10 @@ function renderDetail() {
 }
 
 // ---------- เสี่ยงทาย ----------
-const ROMAN = ["0", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "XIII", "XIV", "XV", "XVI", "XVII", "XVIII", "XIX", "XX", "XXI"];
-const RANK_SHORT = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "P", "Kn", "Q", "K"];
-const SUIT_SVG = {
-  wands: '<svg viewBox="0 0 40 40"><path d="M14 36 L26 6" stroke="#7a4a1e" stroke-width="4" stroke-linecap="round"/><path d="M24 12c4-2 7-1 8 1-3 2-6 2-8-1zM21 19c-4-1-6-4-6-6 3 0 6 2 6 6z" fill="#5fae6b"/></svg>',
-  cups: '<svg viewBox="0 0 40 40"><path d="M9 7h22c0 11-5 16-11 16S9 18 9 7z" fill="#f3d27a" stroke="#b8902e" stroke-width="2"/><path d="M20 23v8M13 34h14" stroke="#b8902e" stroke-width="3" stroke-linecap="round"/></svg>',
-  swords: '<svg viewBox="0 0 40 40"><path d="M20 3l3 6v18h-6V9z" fill="#e9eef5" stroke="#6b7a90" stroke-width="2"/><path d="M11 27h18" stroke="#b8902e" stroke-width="4" stroke-linecap="round"/><path d="M20 29v8" stroke="#7a4a1e" stroke-width="4" stroke-linecap="round"/></svg>',
-  pentacles: '<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="15" fill="#f3d27a" stroke="#b8902e" stroke-width="2"/><path d="M20 9l3.2 7.6 8.1.6-6.2 5.3 2 7.9-7.1-4.4-7.1 4.4 2-7.9-6.2-5.3 8.1-.6z" fill="#fff8e0"/></svg>',
-  major: '<svg viewBox="0 0 40 40"><path d="M20 3l4 12 13 1-10 8 4 13-11-8-11 8 4-13L3 16l13-1z" fill="#f2b84b"/><circle cx="20" cy="20" r="4" fill="#fff"/></svg>',
-};
 
 function cardFace({ card, reversed }, big = false) {
-  const cls = `tcard ${reversed ? "rev" : ""} ${big ? "big" : ""}`;
-  if (card.major) {
-    return `<div class="${cls} art" title="${card.en}"><img src="img/tarot/M${card.num}.jpg" alt="${card.en}"></div>`;
-  }
-  return `<div class="${cls}" style="--suit:${SUITS[card.suit].color}" title="${card.en}">
-    <span class="tn">${RANK_SHORT[card.rank]}</span>${SUIT_SVG[card.suit]}<span class="tname">${card.th}</span></div>`;
+  const cls = `tcard art ${reversed ? "rev" : ""} ${big ? "big" : ""}`;
+  return `<div class="${cls}" title="${card.en}"><img src="img/tarot/${card.id}.jpg" alt="${card.en}" loading="lazy"></div>`;
 }
 
 // ไพ่พลิกได้: หลังไพ่ก่อน แล้วหมุนเปิดหน้า
