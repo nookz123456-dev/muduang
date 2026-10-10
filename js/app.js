@@ -85,6 +85,7 @@ function todayInfo(profile) {
 function showTab(name) {
   document.querySelectorAll(".tabs button").forEach((b) => b.setAttribute("aria-selected", b.dataset.tab === name));
   document.querySelectorAll(".panel").forEach((p) => (p.hidden = p.id !== "tab-" + name));
+  window.scrollTo({ top: 0, behavior: "instant" }); // แท็บอยู่ด้านล่าง: เปิดแท็บใหม่ให้เริ่มที่หัวหน้า
   if (name === "mission") renderMissions();
   if (name === "deity") renderDeity();
   if (name === "detail") renderDetail();
