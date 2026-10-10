@@ -13,6 +13,7 @@ import { dailyReading } from "./daily.js";
 import { dayInfo, findBestDays, PURPOSES, levelOf } from "./calendar.js";
 import { analyzePhone, suggestPairs, THEME } from "./phone.js";
 import { baziMatch } from "./bazi_match.js";
+import { findStars, yearStars } from "./shensha.js";
 import { HOUSE_TOPICS, planetMatrix, PLANET_ROLE, PLANET_ABBR } from "./readings.js";
 import { lifePath, nameNumber, NUMBER_TEXT, reduce } from "./numerology.js";
 import { baziChart, STEMS, STEM_TH, BRANCHES, BRANCH_TH, BRANCH_ANIMAL, ELEMENTS, ELEMENT_ZH, HIDDEN, BRANCH_ELEMENT,
@@ -711,6 +712,18 @@ function renderBazi() {
   $("#bz-year").innerHTML = `ปี ${nowY} คือปี <b>${pillarName(yp)}</b> (${STEM_TH[yp.stem]}${BRANCH_TH[yp.branch]} ธาตุ${ELEMENTS[yEls[0]]}/${ELEMENTS[yEls[1]]}) ` +
     `สำหรับคุณเป็นปีแห่ง <b>${TEN_GOD_TEXT[ytg.zh].th}</b> ${TEN_GOD_TEXT[ytg.zh].text} ` +
     (ys > 0 ? "ธาตุของปีช่วยเสริมดวง เหมาะกับการเริ่มสิ่งใหม่" : ys < 0 ? "ธาตุของปีไม่ค่อยเป็นใจ ใช้ปีนี้สะสมกำลังและรอบคอบเรื่องใหญ่" : "ธาตุของปีเป็นกลาง ผลขึ้นกับการลงมือของคุณเอง");
+
+  // 神煞: ดาวในดวง + ดาวที่ปีนี้มาเยือน
+  const KIND = { good: ["ดาวมงคล", "tag-good"], mixed: ["สองคม", "tag-mixed"], care: ["ควรระวัง", "tag-care"] };
+  const stars = findStars(c.pillars);
+  $("#ss-none").hidden = stars.length > 0;
+  $("#ss-list").innerHTML = stars.map((s) => `
+    <div class="day-area ss-${s.kind}"><div class="top-line"><b>${s.zh} ${s.th}</b><span class="${KIND[s.kind][1]} small">${KIND[s.kind][0]}</span></div>
+    <p class="small"><span class="muted">อยู่ที่เสา${s.where.join(" และเสา")}</span><br>${s.text}<br><b>ทำจริง:</b> ${s.act}</p></div>`).join("");
+  const visit = yearStars(c.pillars, nowY);
+  if (visit.length) {
+    $("#bz-year").innerHTML += `<br><br>ดาวที่มาเยือนปีนี้: ${visit.map((s) => `<b>${s.zh} ${s.th}</b>`).join(" · ")} ปีนี้เรื่องของดาวนี้จะเด่นขึ้น: ${visit.map((s) => s.text).join(" ")}`;
+  }
 }
 
 $("#bz-gender").addEventListener("change", (e) => {

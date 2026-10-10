@@ -461,3 +461,11 @@ fieldset, input, select { min-width: 0; }
 .ph-pair.q-care b { color: var(--bad); }
 .ph-pair.q-care { background: var(--bad-bg); }
 .ph-pair.q-good { background: var(--good-bg); }
+
+/* 神煞 */
+.tag-mixed { color: #9fd0ff; font-weight: 700; }
+.ss-good { border-left: 3px solid var(--good); }
+.ss-mixed { border-left: 3px solid #9fd0ff; }
+.ss-care { border-left: 3px solid var(--warn); }
+#ss-list .top-line { gap: 8px; align-items: flex-start; }
+#ss-list .top-line span { white-space: nowrap; flex: 0 0 auto; }
