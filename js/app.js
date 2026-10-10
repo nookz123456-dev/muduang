@@ -373,6 +373,7 @@ function renderDetail() {
   const { y, m, d } = parseDate(profile.date);
   const place = placeOf(profile.place);
   const r = detailReading(y, m, d, profile.time || null, place);
+  renderChartExtras(r, y, m, d); // วาดผังก่อน ส่วนอื่นพังก็ยังเห็นผัง
 
   $("#lagna-title").textContent = r.usingMoon ? `จันทรลัคนา ราศี${r.lagna.th}` : `ลัคนาราศี${r.lagna.th}`;
   $("#lagna-text").textContent = r.lagna.text;
@@ -436,7 +437,6 @@ function renderDetail() {
 
   $("#planet-table").innerHTML = "<tr><th>ดาว</th><th>ราศี</th><th>เรือน</th></tr>" +
     r.planetsByHouse.map((x) => `<tr><td>${x.th}</td><td>${RASHIS[x.sign]}</td><td>${x.house}</td></tr>`).join("");
-  renderChartExtras(r, y, m, d);
 }
 
 // ---------- ผังดวง เมตริกซ์ดาว เลขศาสตร์ ----------
