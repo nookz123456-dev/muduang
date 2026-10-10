@@ -469,3 +469,16 @@ fieldset, input, select { min-width: 0; }
 .ss-care { border-left: 3px solid var(--warn); }
 #ss-list .top-line { gap: 8px; align-items: flex-start; }
 #ss-list .top-line span { white-space: nowrap; flex: 0 0 auto; }
+
+/* ฉีเหมิน */
+.qm-best p { margin: 6px 0; }
+.qm-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; margin: 10px 0 4px; }
+.qc { background: var(--tile); border-radius: 12px; padding: 6px 4px; text-align: center; display: flex; flex-direction: column; gap: 1px; line-height: 1.25; min-width: 0; border: 1px solid transparent; }
+.qc .qd { font-size: 0.62rem; color: var(--muted); }
+.qc b { font-size: 1.05rem; }
+.qc small { font-size: 0.62rem; color: var(--muted); overflow-wrap: anywhere; }
+.qc .qs { opacity: 0.8; }
+.qc.center { justify-content: center; background: rgba(8, 8, 30, 0.35); }
+.qc.best { border-color: var(--good); background: var(--good-bg); }
+.qc.best b { color: var(--good); }
+.qc.worst { border-color: rgba(255, 143, 143, 0.5); }

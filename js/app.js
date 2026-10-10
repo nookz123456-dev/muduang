@@ -14,6 +14,8 @@ import { dayInfo, findBestDays, PURPOSES, levelOf } from "./calendar.js";
 import { analyzePhone, suggestPairs, THEME } from "./phone.js";
 import { baziMatch } from "./bazi_match.js";
 import { findStars, yearStars } from "./shensha.js";
+import { qimenChart, PALACE_DIR, PALACE_ZH } from "./qimen.js";
+import { DOOR_INFO, DEITY_INFO, THREE_WONDERS, starInfo, palaceScore } from "./qimen_text.js";
 import { HOUSE_TOPICS, planetMatrix, PLANET_ROLE, PLANET_ABBR } from "./readings.js";
 import { lifePath, nameNumber, NUMBER_TEXT, reduce } from "./numerology.js";
 import { baziChart, STEMS, STEM_TH, BRANCHES, BRANCH_TH, BRANCH_ANIMAL, ELEMENTS, ELEMENT_ZH, HIDDEN, BRANCH_ELEMENT,
@@ -720,10 +722,69 @@ function renderBazi() {
   $("#ss-list").innerHTML = stars.map((s) => `
     <div class="day-area ss-${s.kind}"><div class="top-line"><b>${s.zh} ${s.th}</b><span class="${KIND[s.kind][1]} small">${KIND[s.kind][0]}</span></div>
     <p class="small"><span class="muted">อยู่ที่เสา${s.where.join(" และเสา")}</span><br>${s.text}<br><b>ทำจริง:</b> ${s.act}</p></div>`).join("");
+  renderQimen();
+  renderQimenBirth();
   const visit = yearStars(c.pillars, nowY);
   if (visit.length) {
     $("#bz-year").innerHTML += `<br><br>ดาวที่มาเยือนปีนี้: ${visit.map((s) => `<b>${s.zh} ${s.th}</b>`).join(" · ")} ปีนี้เรื่องของดาวนี้จะเด่นขึ้น: ${visit.map((s) => s.text).join(" ")}`;
   }
+}
+
+// ---------- ฉีเหมิน ----------
+let qmOffset = 0; // เลื่อนทีละยาม (2 ชั่วโมง)
+const QM_GRID = [4, 9, 2, 3, 5, 7, 8, 1, 6]; // ใต้อยู่บนตามแบบจีน
+const qmCell = (pl, cls = "") => {
+  if (pl.p === 5) return `<div class="qc center"><span class="qd">กลาง</span><b>${STEMS[pl.earth]}</b><small>天禽</small></div>`;
+  return `<div class="qc ${cls}"><span class="qd">${PALACE_DIR[pl.p]}</span>
+    <b>${pl.door}門</b><small>${DOOR_INFO[pl.door].th}</small>
+    <small>${pl.star.split("·")[0]} · ${pl.deity}</small>
+    <small class="qs">ฟ้า ${pl.heaven.map((s) => STEMS[s]).join("")} / ดิน ${STEMS[pl.earth]}</small></div>`;
+};
+
+function renderQimen() {
+  const t = new Date(Date.now() + qmOffset * 2 * 3600000);
+  const { y, m, d } = parseDate(dayKeyOf(t));
+  const [hh, mm] = new Intl.DateTimeFormat("en-GB", { timeZone: TZ, hour: "2-digit", minute: "2-digit", hour12: false })
+    .format(t).split(":").map((v, i) => (i === 0 ? Number(v) % 24 : Number(v))); // บางเบราว์เซอร์คืน "24:xx" ตอนเที่ยงคืน
+  const c = qimenChart(y, m, d, hh, mm);
+  const scored = QM_GRID.filter((p) => p !== 5).map((p) => ({ pl: c.palaces[p], s: palaceScore(c.palaces[p]) }))
+    .sort((a, b) => b.s - a.s);
+  const best = scored[0].pl, worst = scored[scored.length - 1].pl;
+  $("#qm-sub").textContent = `สารท ${c.term} · ${c.yang ? "หยาง" : "หยิน"}遁 ผังที่ ${c.ju} (${["ต้น", "กลาง", "ปลาย"][c.yuan]}) · ยาม${STEMS[c.hour.stem]}${BRANCHES[c.hour.branch]} · ดาวประธาน ${c.zhiFu} ประตูประธาน ${c.zhiShi}門`;
+  const wonder = best.heaven.some((s) => THREE_WONDERS.includes(s)) ? " มีสามอัศจรรย์ (三奇) อยู่บนจานฟ้า เสริมให้แรงขึ้นอีก" : "";
+  $("#qm-best").innerHTML = `
+    <p><span class="tag-good">ทิศดีที่สุด</span> <b>${PALACE_DIR[best.p]}</b> · ${best.door}門 ${DOOR_INFO[best.door].th}: ${DOOR_INFO[best.door].text}${wonder}</p>
+    <p class="small"><span class="tag-care">ทิศควรเลี่ยง</span> <b>${PALACE_DIR[worst.p]}</b> · ${worst.door}門 ${DOOR_INFO[worst.door].th}: ${DOOR_INFO[worst.door].text}</p>`;
+  $("#qm-grid").innerHTML = QM_GRID.map((p) => qmCell(c.palaces[p], p === best.p ? "best" : p === worst.p ? "worst" : "")).join("");
+  const label = qmOffset === 0 ? "ยามนี้" : qmOffset > 0 ? `อีก ${qmOffset * 2} ชม.` : `${-qmOffset * 2} ชม. ก่อน`;
+  $("#qm-time").textContent = `${label} · ${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")} น.`;
+}
+document.querySelectorAll("[data-qh]").forEach((b) => b.addEventListener("click", () => {
+  qmOffset = Math.max(-12, Math.min(12, qmOffset + Number(b.dataset.qh)));
+  renderQimen();
+}));
+
+function renderQimenBirth() {
+  $("#qm-birth-none").hidden = !!profile.time;
+  if (!profile.time) { $("#qm-birth").innerHTML = ""; return; }
+  const { y, m, d } = parseDate(profile.date);
+  const [hh, mm] = profile.time.split(":").map(Number);
+  const c = qimenChart(y, m, d, hh, mm);
+  // ตัวเรา = วังที่ก้านวันเกิดอยู่บนจานฟ้า (วัน 甲 ใช้ 六儀 ที่ซ่อน 甲 ของรอบวัน)
+  const xunYi = { 0: 4, 10: 5, 8: 6, 6: 7, 4: 8, 2: 9 }[(c.day.branch - c.day.stem + 12) % 12];
+  const selfStem = c.day.stem === 0 ? xunYi : c.day.stem;
+  const self = QM_GRID.map((p) => c.palaces[p]).find((pl) => pl.heaven && pl.heaven.includes(selfStem));
+  const open = QM_GRID.map((p) => c.palaces[p]).find((pl) => pl.door === "開");
+  const dei = DEITY_INFO[self.deity], door = DOOR_INFO[self.door], star = starInfo(self.star);
+  $("#qm-birth").innerHTML = `
+    <div class="day-areas">
+      <div class="day-area"><div class="top-line"><b>จิตเทพประจำตัว: ${self.deity} ${dei.th}</b></div><p class="small">${dei.text}</p></div>
+      <div class="day-area"><div class="top-line"><b>ประตูชีวิต: ${self.door}門 ${door.th}</b></div><p class="small">${door.text}</p></div>
+      <div class="day-area"><div class="top-line"><b>ดาวนำทาง: ${self.star.split("·")[0]} ${star.th}</b></div><p class="small">${star.text}</p></div>
+      <div class="day-area"><div class="top-line"><b>ทิศของตัวคุณ: ${PALACE_DIR[self.p]}</b></div><p class="small">ก้านวันเกิด ${STEMS[c.day.stem]} ตกวัง${PALACE_ZH[self.p]} นั่งทำงานหรือนั่งสมาธิหันไปทางนี้ ใจจะนิ่งขึ้น</p></div>
+      <div class="day-area"><div class="top-line"><b>ทิศขอพร: ${PALACE_DIR[open.p]}</b></div><p class="small">ทิศของประตูเปิด (開門) ในผังเกิด ตำราถือเป็นประตูแห่งโอกาส เวลาไหว้พระหรือขอพรให้หันไปทางนี้ <b>ทำจริง:</b> ตั้งเป้าหมายให้ชัดก่อนขอทุกครั้ง</p></div>
+    </div>
+    <p class="small muted">ผังเกิด: สารท ${c.term} · ${c.yang ? "หยาง" : "หยิน"}遁 ผังที่ ${c.ju} · ยาม${STEMS[c.hour.stem]}${BRANCHES[c.hour.branch]}</p>`;
 }
 
 $("#bz-gender").addEventListener("change", (e) => {
