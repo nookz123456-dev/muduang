@@ -12,6 +12,7 @@ import { detailReading } from "./detail.js";
 import { dailyReading } from "./daily.js";
 import { dayInfo, findBestDays, PURPOSES, levelOf } from "./calendar.js";
 import { analyzePhone, suggestPairs, THEME } from "./phone.js";
+import { baziMatch } from "./bazi_match.js";
 import { HOUSE_TOPICS, planetMatrix, PLANET_ROLE, PLANET_ABBR } from "./readings.js";
 import { lifePath, nameNumber, NUMBER_TEXT, reduce } from "./numerology.js";
 import { baziChart, STEMS, STEM_TH, BRANCHES, BRANCH_TH, BRANCH_ANIMAL, ELEMENTS, ELEMENT_ZH, HIDDEN, BRANCH_ELEMENT,
@@ -1009,8 +1010,29 @@ $("#couple-form").addEventListener("submit", (e) => {
     .join("");
   const weakest = [...r.parts].sort((x, y) => x.score / x.max - y.score / y.max)[0];
   $("#c-mission").textContent = `หมวดที่ต้องเติมคือ "${weakest.th}" ภารกิจสัปดาห์นี้: ${COUPLE_MISSIONS[weakest.key]}`;
+  renderBaziMatch({ ...p1, time: f.get("t1") || null }, { ...p2, time: f.get("t2") || null });
   $("#couple-result").hidden = false;
 });
+
+// ---------- เปรียบเทียบดวงจีนสองคน ----------
+function baziVerdict(s) {
+  if (s >= 70) return ["เกื้อหนุนกันมาก", "ดวงจีนของทั้งคู่ส่งเสริมกันหลายชั้น"];
+  if (s >= 55) return ["เข้ากันดี", "มีจุดประสานมากกว่าจุดขัด"];
+  if (s >= 40) return ["ปรับจูนกันได้", "ไม่มีอะไรขัดแรง ความสัมพันธ์ขึ้นกับการกระทำของทั้งคู่"];
+  return ["ต้องใช้ความเข้าใจ", "มีจุดตึงหลายจุด รู้ไว้ก่อนจะคุยกันง่ายขึ้น ไม่ได้แปลว่าไปด้วยกันไม่ได้"];
+}
+function renderBaziMatch(p1, p2) {
+  const r = baziMatch(p1, p2);
+  const [title, sub] = baziVerdict(r.score);
+  const level = r.score >= 70 ? "ดีมาก" : r.score >= 55 ? "ดี" : r.score >= 40 ? "กลาง" : "ระวัง";
+  $("#bzm-score").className = `cal-score ${LEVEL_CLASS[level]}`;
+  $("#bzm-score").innerHTML = `<b>${r.score}</b><span>/100</span>`;
+  $("#bzm-verdict").textContent = title;
+  $("#bzm-sum").textContent = sub + (p1.time && p2.time ? "" : " · ใส่เวลาเกิดทั้งคู่จะดูธาตุเติมกันได้แม่นขึ้น");
+  $("#bzm-lines").innerHTML = r.lines.map((l) => `
+    <div class="day-area"><div class="top-line"><b>${l.th}</b>${l.good ? '<span class="tag-good">เสริม</span>' : ""}</div>
+    <p class="small"><span class="muted">${l.detail}</span><br>${l.text}</p></div>`).join("");
+}
 
 // ---------- การ์ดแชร์ (PNG) ----------
 async function saveCard() {
