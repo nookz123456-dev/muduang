@@ -99,6 +99,7 @@ function showTab(name) {
   if (name === "oracle") renderOracle();
   if (name === "bazi") renderBazi();
   try { sessionStorage.setItem("muduang.tab", name); } catch { /* ไม่เป็นไร */ }
+  if (typeof refreshJumps === "function") refreshJumps();
 }
 document.querySelectorAll("[data-tab]").forEach((b) => b.addEventListener("click", () => showTab(b.dataset.tab)));
 document.querySelectorAll("[data-goto]").forEach((b) => b.addEventListener("click", () => showTab(b.dataset.goto)));
@@ -145,6 +146,7 @@ function renderMe() {
   renderCalendar();
   renderSaturn();
   renderNameSub();
+  refreshJumps();
 }
 
 // ---------- ดวงประจำวัน (เลื่อนดูได้ 7 วันก่อน-หลัง) ----------
@@ -1109,57 +1111,160 @@ function renderBaziMatch(p1, p2) {
 }
 
 // ---------- การ์ดแชร์ (PNG) ----------
-async function saveCard() {
+// การ์ดสตอรี่ 9:16 (1080x1920) พื้นหลังจาก Canva + ข้อความวาดเองให้คม
+const loadImg = (src) => new Promise((ok, fail) => { const i = new Image(); i.onload = () => ok(i); i.onerror = fail; i.src = src; });
+function starsText(n) { return "★".repeat(Math.floor(n)) + (n % 1 ? "½" : "") + "☆".repeat(5 - Math.ceil(n)); }
+
+async function drawStory() {
   const c = $("#share-canvas");
   const g = c.getContext("2d");
-  const { info, animal, nak, day } = profile;
-  const t = todayInfo(profile);
-  await document.fonts.load("700 64px Mali");
+  const W = 1080, H = 1920;
+  const { info, animal } = profile;
+  const sel = selectedDay();
+  const b = parseDate(profile.date);
+  const r = dailyReading({ nakIndex: profile.nak.index, rashi: profile.nak.rashi, m: b.m, d: b.d }, sel.y, sel.m, sel.d);
+  await Promise.all(["700 80px Mali", "600 40px Mali", "400 40px Mali"].map((f) => document.fonts.load(f)));
 
-  const grad = g.createLinearGradient(0, 0, 1080, 1350);
-  grad.addColorStop(0, "#fff1f6");
-  grad.addColorStop(1, "#efe4ff");
-  g.fillStyle = grad;
-  g.fillRect(0, 0, 1080, 1350);
-
-  g.fillStyle = animal.color;
-  g.beginPath();
-  g.arc(540, 440, 290, 0, Math.PI * 2);
-  g.fill();
-
-  const img = new Image();
-  img.src = imgOf(info.animal);
-  await img.decode();
-  g.globalCompositeOperation = "multiply";
-  g.drawImage(img, 300, 200, 480, 480);
-  g.globalCompositeOperation = "source-over";
-
+  try {
+    g.imageSmoothingQuality = "high";
+    g.drawImage(await loadImg("img/story-bg.jpg"), 0, 0, W, H);
+  } catch {
+    const grad = g.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0, "#11112b"); grad.addColorStop(1, "#1a1942");
+    g.fillStyle = grad; g.fillRect(0, 0, W, H);
+  }
   g.textAlign = "center";
-  g.fillStyle = "#4a3b5c";
-  g.font = "700 76px Mali";
-  g.fillText(`${animal.th}${info.sex === "M" ? "หนุ่ม" : "สาว"}ประจำฤกษ์`, 540, 840);
-  g.font = "600 40px Mali";
-  g.fillStyle = "#9a8aa8";
-  g.fillText(`${profile.name ? profile.name + " · " : ""}ฤกษ์${info.th} · จันทร์ราศี${RASHIS[nak.rashi]}`, 540, 910);
-  g.fillStyle = "#4a3b5c";
-  g.font = "400 40px Mali";
-  g.fillText(animal.trait, 540, 990, 960);
-  g.fillStyle = "#b78cf2";
-  g.font = "700 48px Mali";
-  g.fillText(`วันนี้: ${t.tara.mood}`, 540, 1100);
-  g.fillStyle = day.hex;
-  g.font = "600 38px Mali";
-  g.fillText(`สีมงคลวันเกิด: ${day.color}`, 540, 1170);
-  g.fillStyle = "#b78cf2";
-  g.font = "700 44px Mali";
-  g.fillText("ดาวเล่า", 540, 1290);
+  const text = (str, y, font, color, max = 900) => { g.font = font; g.fillStyle = color; g.fillText(str, W / 2, y, max); };
 
-  const a = document.createElement("a");
-  a.download = `muduang-${info.animal}.png`;
-  a.href = c.toDataURL("image/png");
-  a.click();
+  g.shadowColor = "rgba(243, 211, 138, 0.55)"; g.shadowBlur = 30;
+  text("ดาวเล่า", 365, "700 92px Mali", "#f3d38a");
+  g.shadowBlur = 0;
+  const dayLabel = dayOffset === 0 ? "ดวงวันนี้" : DAY_LABEL[dayOffset] || "ดวงประจำวัน";
+  text(`${dayLabel} · ${thaiLong(new Date(Date.now() + dayOffset * 86400000))}`, 430, "600 38px Mali", "#a49fca");
+
+  // มาสคอตในวงกลมสีประจำสัตว์ + วงทอง
+  const cx = W / 2, cy = 690, R = 195;
+  g.save();
+  g.beginPath(); g.arc(cx, cy, R, 0, Math.PI * 2); g.clip();
+  g.fillStyle = animal.color; g.fillRect(cx - R, cy - R, R * 2, R * 2);
+  g.globalCompositeOperation = "multiply";
+  g.drawImage(await loadImg(imgOf(info.animal)), cx - R * 0.85, cy - R * 0.85, R * 1.7, R * 1.7);
+  g.restore();
+  g.strokeStyle = "rgba(243, 211, 138, 0.7)"; g.lineWidth = 8;
+  g.beginPath(); g.arc(cx, cy, R + 10, 0, Math.PI * 2); g.stroke();
+
+  text(`${animal.th}${info.sex === "M" ? "หนุ่ม" : "สาว"}ประจำฤกษ์`, 985, "700 70px Mali", "#ece7ff");
+  text(`${profile.name ? profile.name + " · " : ""}ฤกษ์${info.th}`, 1042, "600 38px Mali", "#a49fca");
+
+  g.shadowColor = "rgba(243, 211, 138, 0.4)"; g.shadowBlur = 20;
+  text(r.tara.mood, 1145, "700 60px Mali", "#f3d38a");
+  g.shadowBlur = 0;
+  text(`${starsText(r.overall)}  ${r.overall}/5`, 1205, "600 44px Mali", "#f3d38a");
+
+  // 5 ด้าน
+  const top = 1295, row = 66;
+  g.fillStyle = "rgba(255, 255, 255, 0.06)";
+  g.beginPath(); g.roundRect(150, top - 50, 780, row * r.areas.length + 30, 32); g.fill();
+  r.areas.forEach((a, i) => {
+    const y = top + i * row;
+    g.textAlign = "left"; g.font = "600 42px Mali"; g.fillStyle = "#ece7ff"; g.fillText(a.th, 200, y);
+    g.textAlign = "right"; g.font = "600 42px Mali"; g.fillStyle = "#f3d38a"; g.fillText(starsText(a.score), 880, y);
+  });
+  g.textAlign = "center";
+
+  // สีประจำวัน · เลขวัน · เวลาดี/เลี่ยง (สองบรรทัด กันข้อความชนกัน)
+  const ly = top + row * r.areas.length + 50;
+  g.font = "600 38px Mali";
+  const line1 = `สี${r.color.color} · เลขวัน ${r.dayNumber}`;
+  const w1 = g.measureText(line1).width;
+  g.fillStyle = r.color.hex; g.beginPath(); g.arc(W / 2 - w1 / 2 - 32, ly - 13, 16, 0, Math.PI * 2); g.fill();
+  text(line1, ly, "600 38px Mali", "#ece7ff");
+  text(`${r.good ? `ฤกษ์ดี ${r.good} · ` : ""}เลี่ยง ${r.rahu}`, ly + 58, "400 34px Mali", "#a49fca");
+
+  text("ดูดวงของคุณฟรีที่ muduang.vercel.app", 1800, "600 34px Mali", "#a49fca");
+  return new Promise((ok) => c.toBlob(ok, "image/png"));
+}
+
+async function saveCard() {
+  const btn = $("#save-card");
+  btn.disabled = true;
+  try {
+    const blob = await drawStory();
+    const file = new File([blob], `daolao-${profile.info.animal}.png`, { type: "image/png" });
+    // มือถือ: เปิดหน้าแชร์ของเครื่อง (ลง IG/TikTok/LINE ได้เลย) ไม่รองรับค่อยดาวน์โหลด
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: "ดาวเล่า" }); return; } catch (e) { if (e.name === "AbortError") return; }
+    }
+    const a = document.createElement("a");
+    a.download = file.name;
+    a.href = URL.createObjectURL(blob);
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  } finally {
+    btn.disabled = false;
+  }
 }
 $("#save-card").addEventListener("click", saveCard);
+
+// ---------- แถบทางลัดในแท็บยาว (สร้างจาก data-jump ของการ์ด) ----------
+document.querySelectorAll(".panel").forEach((panel) => {
+  const targets = [...panel.querySelectorAll("[data-jump]")];
+  if (targets.length < 3) return;
+  const nav = document.createElement("nav");
+  nav.className = "jumps";
+  nav.setAttribute("aria-label", "ไปยังหัวข้อ");
+  nav.innerHTML = targets.map((t, i) => `<button type="button" class="chip" data-j="${i}">${t.dataset.jump}</button>`).join("");
+  nav.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-j]");
+    if (b) targets[Number(b.dataset.j)].scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+  panel.prepend(nav);
+  panel.jumpTargets = targets;
+});
+// ซ่อนทางลัดของการ์ดที่ยังไม่แสดง (เช่น ยังไม่กรอกวันเกิด)
+function refreshJumps() {
+  document.querySelectorAll(".panel").forEach((panel) => {
+    if (!panel.jumpTargets || panel.hidden) return;
+    const nav = panel.querySelector(".jumps");
+    let shown = 0;
+    nav.querySelectorAll("[data-j]").forEach((b) => {
+      const vis = !!panel.jumpTargets[Number(b.dataset.j)].offsetParent;
+      b.hidden = !vis;
+      shown += vis;
+    });
+    nav.hidden = shown < 3;
+  });
+}
+
+// ---------- ติดตั้งเป็นแอป (PWA) ----------
+if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
+  navigator.serviceWorker.register("sw.js").catch(() => { /* ไม่มี service worker ก็ใช้เว็บได้ปกติ */ });
+}
+const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+let installEvent = null;
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault(); // เก็บไว้ให้ผู้ใช้กดเองจากปุ่มของเรา
+  installEvent = e;
+  $("#install").hidden = false;
+  $("#install-btn").hidden = false;
+});
+$("#install-btn").addEventListener("click", async () => {
+  if (installEvent) {
+    installEvent.prompt();
+    await installEvent.userChoice;
+    installEvent = null;
+    $("#install").hidden = true;
+  } else {
+    $("#install-ios").hidden = false;
+  }
+});
+window.addEventListener("appinstalled", () => { $("#install").hidden = true; });
+// iPhone ไม่มีปุ่มติดตั้งอัตโนมัติ แสดงวิธีเพิ่มเอง
+if (!standalone && /iphone|ipad/i.test(navigator.userAgent)) {
+  $("#install").hidden = false;
+  $("#install-btn").hidden = true;
+  $("#install-ios").hidden = false;
+}
 
 // ---------- เริ่ม ----------
 $("#place-select").innerHTML = PROVINCES.map((p) => `<option>${p.name}</option>`).join("");

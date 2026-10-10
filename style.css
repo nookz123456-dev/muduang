@@ -482,3 +482,20 @@ fieldset, input, select { min-width: 0; }
 .qc.best { border-color: var(--good); background: var(--good-bg); }
 .qc.best b { color: var(--good); }
 .qc.worst { border-color: rgba(255, 143, 143, 0.5); }
+
+/* ปุ่มติดตั้งแอป */
+.install { margin: -6px auto 16px; max-width: 320px; }
+.install .btn { padding: 9px 14px; font-size: 0.9rem; }
+.install p { margin: 6px 0 0; }
+
+/* แถบทางลัด */
+.jumps {
+  position: sticky; top: 0; z-index: 15; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none;
+  margin: 0 -16px 12px; padding: 10px 16px; background: rgba(17, 17, 43, 0.8);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid var(--line);
+}
+.jumps::-webkit-scrollbar { display: none; }
+.jumps .chip { flex: 0 0 auto; font: inherit; font-size: 0.82rem; cursor: pointer; white-space: nowrap; }
+.jumps .chip:hover { border-color: var(--card-edge); color: var(--accent); }
+.jumps[hidden], .jumps .chip[hidden] { display: none; }
+[data-jump] { scroll-margin-top: 64px; }
