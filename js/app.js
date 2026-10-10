@@ -10,7 +10,8 @@ import { checkName, ROLE_MEANING } from "./taksa.js";
 import { PROVINCES, placeOf } from "./provinces.js";
 import { detailReading } from "./detail.js";
 import { dailyReading } from "./daily.js";
-import { dayInfo, findBestDays, PURPOSES } from "./calendar.js";
+import { dayInfo, findBestDays, PURPOSES, levelOf } from "./calendar.js";
+import { analyzePhone, suggestPairs, THEME } from "./phone.js";
 import { HOUSE_TOPICS, planetMatrix, PLANET_ROLE, PLANET_ABBR } from "./readings.js";
 import { lifePath, nameNumber, NUMBER_TEXT, reduce } from "./numerology.js";
 import { baziChart, STEMS, STEM_TH, BRANCHES, BRANCH_TH, BRANCH_ANIMAL, ELEMENTS, ELEMENT_ZH, HIDDEN, BRANCH_ELEMENT,
@@ -279,6 +280,39 @@ $("#best-days").addEventListener("click", (e) => {
   const [y, m, d] = b.dataset.go.split("-").map(Number);
   goToDay(y, m, d);
   $(".today").scrollIntoView({ behavior: "smooth", block: "start" });
+});
+
+// ---------- เช็คเบอร์มือถือ (ไม่บันทึกเบอร์) ----------
+const Q_LABEL = { good: "ดี", mid: "กลาง", rest: "พัก", care: "ระวัง" };
+$("#phone-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const r = analyzePhone(e.target.p.value, profile ? profile.dayIdx : null);
+  $("#ph-error").hidden = !!r;
+  $("#ph-result").hidden = !r;
+  if (!r) return;
+  const level = levelOf(r.score);
+  $("#ph-score").className = `cal-score ${LEVEL_CLASS[level]}`;
+  $("#ph-score").innerHTML = `<b>${r.score}</b><span>/100<br>${level}</span>`;
+  $("#ph-num").innerHTML = `${r.num.slice(0, 3)}-<b>${r.num.slice(3, 6)}-${r.num.slice(6)}</b>`;
+  $("#ph-sum").textContent = `ผลรวมทุกหลัก ${r.sum} → เลข ${r.root} ${NUMBER_TEXT[r.root].th}: ${NUMBER_TEXT[r.root].text}`;
+  $("#ph-pairs").innerHTML = r.pairs.map((p) => `
+    <div class="ph-pair q-${p.q}"><b>${p.pair}</b><span><small>${Q_LABEL[p.q]}${p.last ? " · คู่ท้ายเบอร์ สำคัญที่สุด" : ""}</small>${p.text}</span></div>`).join("");
+
+  const t = r.taksa;
+  let tip;
+  if (t) {
+    const roleNames = t.good.map((n) => `${n} (${t.roleOfDigit(n)})`).join(" ");
+    $("#ph-taksa").innerHTML = `คนเกิดวัน${THAI_DAYS[profile.dayIdx].th} เลขเสริมดวงคือ ${roleNames} · เลขกาลกิณีคือ <b>${t.kalakini}</b> ` +
+      (t.hits ? `<span class="tag-care">มีอยู่ ${t.hits} ตัวใน 7 หลักท้าย</span>` : `<span class="tag-good">ไม่มีใน 7 หลักท้าย</span>`);
+    const sug = suggestPairs(t.good.filter((n) => n !== t.kalakini).concat(9));
+    tip = r.lastPair.q === "care" || t.hits
+      ? `ถ้าวันหนึ่งจะเปลี่ยนเบอร์ ลองหาเบอร์ที่ท้ายเป็นคู่ ${sug.slice(0, 4).join(" ")} และไม่มีเลข ${t.kalakini} ระหว่างนี้ <b>ทำจริง:</b> ${r.lastPair.q === "care" ? "สังเกตเรื่องที่คู่ท้ายเตือนไว้ แล้วตั้งใจทำตรงข้ามทุกวัน" : "ตั้งรหัสล็อกหน้าจอเป็นคู่ดีของคุณเพื่อเตือนใจ"}`
+      : `เบอร์นี้ไปกันได้กับวันเกิดของคุณ ไม่ต้องเปลี่ยน <b>ทำจริง:</b> ใช้เบอร์นี้กับงานที่คู่ท้ายบอกว่าเด่น เช่น ${(THEME[r.core[6] || r.core[5]] || THEME[1]).plus || THEME[1].plus}`;
+  } else {
+    $("#ph-taksa").textContent = "";
+    tip = "กรอกวันเกิดในแท็บดวงฉันก่อน จะเห็นเลขเสริมดวงและเลขกาลกิณีของคุณ";
+  }
+  $("#ph-tip").innerHTML = tip;
 });
 
 // ---------- เสาร์ทับ ----------

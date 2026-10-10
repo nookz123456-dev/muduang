@@ -447,3 +447,17 @@ fieldset, input, select { min-width: 0; }
 .best:hover { border-color: var(--card-edge); }
 .best small { display: block; color: var(--muted); font-size: 0.78rem; }
 .pscore { font-size: 1.3rem; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
+
+/* เช็คเบอร์มือถือ */
+.ph-top { display: grid; grid-template-columns: 76px 1fr; gap: 12px; align-items: center; margin: 12px 0 8px; }
+.ph-num { font-size: 1.35rem; letter-spacing: 1px; margin: 0; font-variant-numeric: tabular-nums; color: var(--muted); }
+.ph-num b { color: var(--ink); }
+.ph-top .small { margin: 2px 0 0; }
+.ph-pairs { display: grid; gap: 6px; margin: 8px 0; }
+.ph-pair { display: grid; grid-template-columns: 44px 1fr; gap: 10px; align-items: center; background: var(--tile); border-radius: 12px; padding: 8px 10px; font-size: 0.88rem; }
+.ph-pair b { font-size: 1.25rem; text-align: center; font-variant-numeric: tabular-nums; }
+.ph-pair small { display: block; font-size: 0.72rem; color: var(--muted); }
+.ph-pair.q-good b { color: var(--good); }
+.ph-pair.q-care b { color: var(--bad); }
+.ph-pair.q-care { background: var(--bad-bg); }
+.ph-pair.q-good { background: var(--good-bg); }

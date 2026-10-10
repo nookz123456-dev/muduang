@@ -115,6 +115,26 @@
         </div>
       </article>
 
+      <article class="card phonecheck">
+        <h3>เช็คเบอร์มือถือ</h3>
+        <p class="muted small">ดูคู่เลข 7 หลักท้าย ผลรวม และเลขทักษาตามวันเกิดของคุณ เบอร์ที่พิมพ์ไม่ถูกบันทึกและไม่ถูกส่งออกจากเครื่อง</p>
+        <form id="phone-form" class="inline">
+          <input name="p" inputmode="tel" maxlength="16" placeholder="เช่น 081-234-5678" autocomplete="off" required>
+          <button class="btn" type="submit">เช็ค</button>
+        </form>
+        <p class="small warn" id="ph-error" hidden>ใส่เบอร์มือถือไทย 10 หลัก ขึ้นต้นด้วย 0 หรือ +66</p>
+        <div id="ph-result" hidden>
+          <div class="ph-top">
+            <div class="cal-score" id="ph-score"></div>
+            <div><p class="ph-num" id="ph-num"></p><p class="small" id="ph-sum"></p></div>
+          </div>
+          <div class="ph-pairs" id="ph-pairs"></div>
+          <p class="small" id="ph-taksa"></p>
+          <p class="mission-line small" id="ph-tip"></p>
+          <p class="small muted">คู่เลขใช้ตามที่ตำราไทยนิยมถือ คู่ที่ไม่มีในตำรานิยมดูจากความเป็นมิตรของดาว แต่ละสำนักให้ความหมายต่างกัน ถือเป็นเครื่องเตือนใจ ไม่ต้องรีบเปลี่ยนเบอร์</p>
+        </div>
+      </article>
+
       <div class="row">
         <button class="btn ghost" id="save-card">เซฟการ์ดไปแชร์</button>
         <button class="btn ghost" id="edit-birth">แก้วันเกิด</button>
