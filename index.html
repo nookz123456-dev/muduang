@@ -74,6 +74,24 @@
         <button class="btn" data-goto="mission">ไปทำภารกิจมูของวันนี้</button>
       </article>
 
+      <article class="card cal">
+        <img class="cal-art" src="img/calendar.jpg" alt="ปฏิทินดวงดาวยามค่ำ" onerror="this.remove()">
+        <h3>ปฏิทินวันดีของคุณ</h3>
+        <p class="small muted">คิดจากดวงของคุณเอง รวมปฏิทินจีน 12 นายวัน วันชง ธาตุของวัน และฤกษ์ดวงจันทร์ แตะวันไหนก็เปิดดวงวันนั้นด้านบน</p>
+        <div class="cal-head">
+          <button class="btn ghost" type="button" data-cm="-1" aria-label="เดือนก่อน">&lsaquo;</button>
+          <b id="cal-title"></b>
+          <button class="btn ghost" type="button" data-cm="1" aria-label="เดือนถัดไป">&rsaquo;</button>
+        </div>
+        <div class="cal-grid" id="cal-grid"></div>
+        <p class="cal-legend small"><span class="lv-best">ดีมาก</span><span class="lv-good">ดี</span><span class="lv-mid">กลาง</span><span class="lv-care">ระวัง</span><span><i class="term"></i>สารท</span><span><i class="clash"></i>วันชง</span></p>
+        <div class="cal-day" id="cal-day"></div>
+        <h4 class="cal-find">หาวันดีให้เรื่อง</h4>
+        <div class="chips topic-chips" id="purpose-chips"></div>
+        <ol class="best-days" id="best-days"></ol>
+        <p class="small muted">ดูล่วงหน้า 60 วัน เลือก 3 วันที่ดีที่สุดสำหรับคุณ ไม่ได้ใช้แทนการปรึกษาซินแสหรือโหรสำหรับงานใหญ่</p>
+      </article>
+
       <article class="card saturn">
         <p class="muted small">ดาวเสาร์จร (สาเฑสาตี)</p>
         <h3 id="ss-title"></h3>

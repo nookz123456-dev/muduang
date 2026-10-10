@@ -10,6 +10,7 @@ import { checkName, ROLE_MEANING } from "./taksa.js";
 import { PROVINCES, placeOf } from "./provinces.js";
 import { detailReading } from "./detail.js";
 import { dailyReading } from "./daily.js";
+import { dayInfo, findBestDays, PURPOSES } from "./calendar.js";
 import { HOUSE_TOPICS, planetMatrix, PLANET_ROLE, PLANET_ABBR } from "./readings.js";
 import { lifePath, nameNumber, NUMBER_TEXT, reduce } from "./numerology.js";
 import { baziChart, STEMS, STEM_TH, BRANCHES, BRANCH_TH, BRANCH_ANIMAL, ELEMENTS, ELEMENT_ZH, HIDDEN, BRANCH_ELEMENT,
@@ -132,7 +133,11 @@ function renderMe() {
   } else unc.hidden = true;
 
   dayOffset = 0;
+  calNatal = null;
+  const now = parseDate(dayKeyOf(new Date()));
+  calY = now.y; calM = now.m;
   renderDaily();
+  renderCalendar();
   renderSaturn();
   renderNameSub();
 }
@@ -164,13 +169,117 @@ function renderDaily() {
   $("#today-tech").textContent =
     `ดวงจันทร์อยู่ฤกษ์${NAKSHATRAS[r.moon.index].th} ราศี${RASHIS[r.moon.rashi]} · ตารา ${r.taraNo} "${r.tara.name}" นับจากฤกษ์เกิด · เรือน ${r.house} นับจากราศีจันทร์เกิด · เวลาดี/ราหูกาลคิดจากพระอาทิตย์ขึ้นราว 6 โมง`;
   document.querySelectorAll("[data-dd]").forEach((btn) => {
-    btn.disabled = Math.abs(dayOffset + Number(btn.dataset.dd)) > 7;
+    btn.disabled = Math.abs(dayOffset + Number(btn.dataset.dd)) > 400;
   });
 }
 document.querySelectorAll("[data-dd]").forEach((btn) => btn.addEventListener("click", () => {
   dayOffset += Number(btn.dataset.dd);
   renderDaily();
+  syncCalendarToDay();
 }));
+
+// ---------- ปฏิทินวันดีเฉพาะบุคคล ----------
+let calY = 0, calM = 0, calNatal = null, calPurpose = "open";
+const MONTHS_TH = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+const LEVEL_CLASS = { "ดีมาก": "lv-best", "ดี": "lv-good", "กลาง": "lv-mid", "ระวัง": "lv-care" };
+const utcDays = (y, m, d) => Date.UTC(y, m - 1, d) / 86400000;
+
+function natalForCalendar() {
+  if (calNatal) return calNatal;
+  const { y, m, d } = parseDate(profile.date);
+  const bz = baziChart(y, m, d, profile.time || null, null);
+  calNatal = {
+    nakIndex: profile.nak.index, rashi: profile.nak.rashi, m, d,
+    dayBranch: bz.pillars[1].branch, yearBranch: bz.pillars[3].branch, fav: bz.fav,
+  };
+  return calNatal;
+}
+function selectedDay() {
+  return parseDate(dayKeyOf(new Date(Date.now() + dayOffset * 86400000)));
+}
+
+function renderCalendar() {
+  const natal = natalForCalendar();
+  const today = parseDate(dayKeyOf(new Date()));
+  const sel = selectedDay();
+  $("#cal-title").textContent = `${MONTHS_TH[calM - 1]} ${calY + 543}`;
+  const first = new Date(Date.UTC(calY, calM - 1, 1)).getUTCDay();
+  const days = new Date(Date.UTC(calY, calM, 0)).getUTCDate();
+  let html = ["อา", "จ", "อ", "พ", "พฤ", "ศ", "ส"].map((w) => `<span class="wd">${w}</span>`).join("");
+  html += "<span></span>".repeat(first);
+  for (let d = 1; d <= days; d++) {
+    const info = dayInfo(natal, calY, calM, d);
+    const cls = [LEVEL_CLASS[info.level]];
+    if (calY === today.y && calM === today.m && d === today.d) cls.push("today");
+    if (calY === sel.y && calM === sel.m && d === sel.d) cls.push("sel");
+    html += `<button type="button" class="cd ${cls.join(" ")}" data-cd="${d}" aria-label="${d} ${info.level}">
+      <b>${d}</b><span class="zh">${STEMS[info.pillar.stem]}${BRANCHES[info.pillar.branch]}</span>${info.term ? '<i class="term"></i>' : ""}${info.clashes.length ? '<i class="clash"></i>' : ""}</button>`;
+  }
+  $("#cal-grid").innerHTML = html;
+  renderCalDay();
+  renderBestDays();
+}
+
+function renderCalDay() {
+  const sel = selectedDay();
+  const info = dayInfo(natalForCalendar(), sel.y, sel.m, sel.d);
+  const fav = info.favEl > 0 ? "ธาตุของวันเป็นธาตุให้คุณ" : info.favEl < 0 ? "ธาตุของวันไม่ค่อยเกื้อหนุนดวงคุณ" : "ธาตุของวันเป็นกลางกับดวงคุณ";
+  $("#cal-day").innerHTML = `
+    <div class="cal-score ${LEVEL_CLASS[info.level]}"><b>${info.score}</b><span>/100<br>${info.level}</span></div>
+    <div class="cal-why">
+      <p class="small muted">${sel.d} ${MONTHS_TH[sel.m - 1]} · วัน${STEMS[info.pillar.stem]}${BRANCHES[info.pillar.branch]} (${STEM_TH[info.pillar.stem]}${BRANCH_TH[info.pillar.branch]})</p>
+      <p><b>${info.officer.zh} ${info.officer.th}</b> ${info.officer.text}</p>
+      <p class="small">${fav}${info.clashes.length ? ` · <span class="tag-care">${info.clashes.join(" และ ")} เลี่ยงเรื่องใหญ่</span>` : ""}</p>
+      ${info.term ? `<p class="small">สารท ${info.term.zh} ${info.term.th}</p>` : ""}
+    </div>`;
+}
+
+function renderBestDays() {
+  const today = parseDate(dayKeyOf(new Date()));
+  const best = findBestDays(natalForCalendar(), calPurpose, today, 60, 3);
+  $("#purpose-chips").innerHTML = Object.entries(PURPOSES)
+    .map(([k, p]) => `<button type="button" class="chip" data-purpose="${k}" aria-pressed="${k === calPurpose}">${p.th}</button>`).join("");
+  $("#best-days").innerHTML = best.map((b) => `
+    <li><button type="button" class="best" data-go="${b.y}-${b.m}-${b.d}">
+      <span><b>${b.d} ${MONTHS_TH[b.m - 1]} ${b.y + 543}</b><small>${b.officer.zh} ${b.officer.th} · ${b.vedic.tara.mood}</small></span>
+      <span class="pscore">${b.purpose}</span></button></li>`).join("");
+}
+
+function syncCalendarToDay() {
+  const sel = selectedDay();
+  if (sel.y !== calY || sel.m !== calM) { calY = sel.y; calM = sel.m; }
+  renderCalendar();
+}
+function goToDay(y, m, d) {
+  const t = parseDate(dayKeyOf(new Date()));
+  dayOffset = utcDays(y, m, d) - utcDays(t.y, t.m, t.d);
+  renderDaily();
+  syncCalendarToDay();
+}
+
+$("#cal-grid").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-cd]");
+  if (b) goToDay(calY, calM, Number(b.dataset.cd));
+});
+document.querySelectorAll("[data-cm]").forEach((btn) => btn.addEventListener("click", () => {
+  calM += Number(btn.dataset.cm);
+  if (calM < 1) { calM = 12; calY--; }
+  if (calM > 12) { calM = 1; calY++; }
+  renderCalendar();
+}));
+$("#purpose-chips").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-purpose]");
+  if (!b) return;
+  calPurpose = b.dataset.purpose;
+  renderBestDays();
+});
+$("#best-days").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-go]");
+  if (!b) return;
+  const [y, m, d] = b.dataset.go.split("-").map(Number);
+  goToDay(y, m, d);
+  $(".today").scrollIntoView({ behavior: "smooth", block: "start" });
+});
 
 // ---------- เสาร์ทับ ----------
 const thaiShort = (t) => new Date(t).toLocaleDateString("th-TH", { timeZone: TZ, day: "numeric", month: "short", year: "numeric" });
