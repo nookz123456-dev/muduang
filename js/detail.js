@@ -36,16 +36,46 @@ function areaReading(area, lagnaSign, planets) {
   return { ...area, sign, lord, lordHouse, occupants, score: sc, summary, lines };
 }
 
+const yearTh = (t) => new Date(t).getFullYear() + 543;
+const monthTh = (t) => new Date(t).toLocaleDateString("th-TH", { month: "short", year: "numeric" });
+
+// "ช่วงนี้" ของแต่ละด้าน: ทศา/ช่วงย่อยที่ดาวเจ้าเรือนหรือดาวในเรือนครองอยู่ + ดาวพฤหัส/เสาร์จรผ่านเรือนนั้น (นับจากลัคนา)
+function areaTiming(a, cur, trHouse, tr) {
+  const out = [];
+  const touches = (p) => p === a.lord || a.occupants.includes(p);
+  const how = (p) => (p === a.lord ? "เป็นดาวเจ้าเรือนนี้" : "อยู่ในเรือนนี้");
+  if (cur && touches(cur.md.lord)) {
+    out.push({ good: true, text: `ตอนนี้อยู่ในทศาดาว${PLANET_TH[cur.md.lord]} (ถึง พ.ศ. ${yearTh(cur.md.end)}) ซึ่ง${how(cur.md.lord)} เรื่องนี้จึงเป็นเรื่องหลักของชีวิตช่วงนี้ ลงแรงตรงนี้คุ้มที่สุด` });
+  }
+  if (cur && cur.ad.lord !== cur.md.lord && touches(cur.ad.lord)) {
+    out.push({ good: true, text: `ช่วงย่อยดาว${PLANET_TH[cur.ad.lord]} (ถึง ${monthTh(cur.ad.end)}) ${how(cur.ad.lord)} เรื่องนี้จะถูกกระตุ้นให้ขยับเป็นพิเศษ` });
+  }
+  if (trHouse.jupiter === a.house) {
+    const until = tr.jupiter.next ? ` ถึง ${monthTh(tr.jupiter.next.at)}` : "";
+    out.push({ good: true, text: `ดาวพฤหัสจรผ่านเรือนนี้${until} โอกาสและคนช่วยเรื่องนี้มาง่าย รีบใช้จังหวะนี้` });
+  }
+  if (trHouse.saturn === a.house) {
+    const until = tr.saturn.next ? ` ถึง ${monthTh(tr.saturn.next.at)}` : "";
+    out.push({ good: false, text: `ดาวเสาร์จรผ่านเรือนนี้${until} เป็นช่วงวางรากฐาน ผลมาช้าแต่มั่นคง อย่าเร่งและอย่าทิ้งกลางทาง` });
+  }
+  return out;
+}
+
 export function detailReading(y, m, d, time, place, now = Date.now()) {
   const chart = natalChart(y, m, d, time, place);
   const moonSign = chart.planets.moon.sign;
   const usingMoon = chart.lagnaSign === null;
   const lagnaSign = usingMoon ? moonSign : chart.lagnaSign;
 
-  const areas = AREAS.map((a) => areaReading(a, lagnaSign, chart.planets));
-
   const list = dashas(chart.planets.moon.lon, chart.date);
   const cur = currentDasha(list, now);
+  const tr = transits(moonSign, now);
+  const trHouse = { jupiter: houseOf(tr.jupiter.sign, lagnaSign), saturn: houseOf(tr.saturn.sign, lagnaSign) };
+
+  const areas = [...AREAS].sort((a, b) => a.house - b.house).map((a) => {
+    const r = areaReading(a, lagnaSign, chart.planets);
+    return { ...r, timing: areaTiming(r, cur, trHouse, tr) };
+  });
   const dasha = cur && {
     list,
     md: { ...cur.md, ...DASHA_TEXT[cur.md.lord], house: houseOf(chart.planets[cur.md.lord].sign, lagnaSign) },
@@ -53,7 +83,6 @@ export function detailReading(y, m, d, time, place, now = Date.now()) {
     next: list[list.indexOf(cur.md) + 1] || null,
   };
 
-  const tr = transits(moonSign, now);
   const transit = {
     jupiter: { ...tr.jupiter, text: JUPITER_TRANSIT[tr.jupiter.house], good: JUPITER_GOOD.includes(tr.jupiter.house) },
     saturn: { ...tr.saturn, text: SATURN_TRANSIT[tr.saturn.house], good: SATURN_GOOD.includes(tr.saturn.house) },

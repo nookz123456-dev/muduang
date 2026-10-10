@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#11112b">
-<title>มูดวง</title>
+<title>ดาวเล่า</title>
 <meta name="description" content="ดูดวงสัตว์ประจำฤกษ์ตามโหราศาสตร์อินเดีย พร้อมภารกิจมูที่ทำให้ชีวิตดีขึ้นจริง">
 <meta property="og:type" content="website">
-<meta property="og:title" content="มูดวง - คุณคือสัตว์ตัวไหนในฤกษ์เกิด">
+<meta property="og:title" content="ดาวเล่า - ดวงดาวเล่าเรื่องชีวิตคุณ ทุกด้าน ทุกวัน">
 <meta property="og:description" content="ดูดวงให้รู้ แล้วมูให้ชีวิตดีขึ้นจริง พร้อมเช็คคะแนนคู่เต็ม 36">
 <meta property="og:url" content="https://muduang.vercel.app/">
 <meta property="og:image" content="https://muduang.vercel.app/og.png">
@@ -21,7 +21,7 @@
 </head>
 <body>
 <header class="top">
-  <h1 class="logo">มูดวง</h1>
+  <h1 class="logo">ดาวเล่า</h1>
   <p class="tag">ดูดวงให้รู้ แล้วมูให้ชีวิตดีขึ้นจริง</p>
 </header>
 
@@ -59,9 +59,17 @@
       </article>
 
       <article class="card today">
-        <p class="muted small" id="today-date"></p>
+        <div class="day-nav">
+          <button class="btn ghost" type="button" data-dd="-1" aria-label="วันก่อนหน้า">&lsaquo;</button>
+          <div><span class="small muted" id="today-label">ดวงวันนี้</span><b id="today-date"></b></div>
+          <button class="btn ghost" type="button" data-dd="1" aria-label="วันถัดไป">&rsaquo;</button>
+        </div>
         <h3 id="today-mood"></h3>
+        <p class="stars day-overall" id="day-overall"></p>
         <p id="today-text"></p>
+        <p class="small" id="today-moon"></p>
+        <div class="day-areas" id="day-areas"></div>
+        <div class="lucky" id="day-lucky"></div>
         <p class="small muted" id="today-tech"></p>
         <button class="btn" data-goto="mission">ไปทำภารกิจมูของวันนี้</button>
       </article>
@@ -168,7 +176,11 @@
         <ul class="plain transit" id="transit-list"></ul>
       </article>
 
-      <h3 class="section-h">ชีวิต 6 ด้าน</h3>
+      <h3 class="section-h">ชีวิต 12 ด้าน</h3>
+      <article class="card">
+        <p class="small muted">สรุปจากเจ้าเรือนครบ 12 เรือน รวมกับทศาและดาวจรตอนนี้ แตะแต่ละด้านเพื่ออ่านคำทำนายเต็ม</p>
+        <div id="area-overview" class="overview"></div>
+      </article>
       <div id="area-list"></div>
 
       <article class="card">
@@ -315,7 +327,7 @@
     </article>
 
     <article class="card">
-      <h3>เซียมซีมูดวง</h3>
+      <h3>เซียมซีดาวเล่า</h3>
       <p class="muted small">เลือกเรื่องที่อยากถาม ตั้งจิตแล้วเขย่า เรื่องเดิมเสี่ยงได้วันละครั้ง</p>
       <div class="chips topic-chips" id="siamsi-topics"></div>
       <div class="siamsi-wrap">
@@ -329,7 +341,7 @@
         <p id="ss-topic"></p>
         <p class="mission-line small" id="ss-advice"></p>
       </div>
-      <p class="small muted">เซียมซีชุดนี้เขียนขึ้นเองสำหรับมูดวง ไม่ใช่เซียมซีของวัดใด</p>
+      <p class="small muted">เซียมซีชุดนี้เขียนขึ้นเองสำหรับดาวเล่า ไม่ใช่เซียมซีของวัดใด</p>
     </article>
   </section>
 

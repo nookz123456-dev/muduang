@@ -9,6 +9,7 @@ import { sadeSati } from "./sadesati.js";
 import { checkName, ROLE_MEANING } from "./taksa.js";
 import { PROVINCES, placeOf } from "./provinces.js";
 import { detailReading } from "./detail.js";
+import { dailyReading } from "./daily.js";
 import { HOUSE_TOPICS, planetMatrix, PLANET_ROLE, PLANET_ABBR } from "./readings.js";
 import { lifePath, nameNumber, NUMBER_TEXT, reduce } from "./numerology.js";
 import { baziChart, STEMS, STEM_TH, BRANCHES, BRANCH_TH, BRANCH_ANIMAL, ELEMENTS, ELEMENT_ZH, HIDDEN, BRANCH_ELEMENT,
@@ -130,15 +131,46 @@ function renderMe() {
       : "วันเกิดของคุณดวงจันทร์ย้ายราศี ใส่เวลาเกิดจะแม่นขึ้น";
   } else unc.hidden = true;
 
-  const t = todayInfo(profile);
-  $("#today-date").textContent = thaiLong(t.now);
-  $("#today-mood").innerHTML = `${t.tara.mood} <span class="small tone-${t.tara.tone}">(${t.tara.tone})</span>`;
-  $("#today-text").textContent = t.tara.text;
-  $("#today-tech").textContent =
-    `ดวงจันทร์วันนี้อยู่ฤกษ์${NAKSHATRAS[t.moon.index].th} นับจากฤกษ์เกิดได้ตารา ${t.taraNo} "${t.tara.name}"`;
+  dayOffset = 0;
+  renderDaily();
   renderSaturn();
   renderNameSub();
 }
+
+// ---------- ดวงประจำวัน (เลื่อนดูได้ 7 วันก่อน-หลัง) ----------
+let dayOffset = 0;
+const DAY_LABEL = { "-1": "ดวงเมื่อวาน", 0: "ดวงวันนี้", 1: "ดวงพรุ่งนี้" };
+
+function renderDaily() {
+  const when = new Date(Date.now() + dayOffset * 86400000);
+  const { y, m, d } = parseDate(dayKeyOf(when));
+  const b = parseDate(profile.date);
+  const r = dailyReading({ nakIndex: profile.nak.index, rashi: profile.nak.rashi, m: b.m, d: b.d }, y, m, d);
+
+  $("#today-label").textContent = DAY_LABEL[dayOffset] || (dayOffset > 0 ? `อีก ${dayOffset} วัน` : `${-dayOffset} วันก่อน`);
+  $("#today-date").textContent = thaiLong(when);
+  $("#today-mood").innerHTML = `${r.tara.mood} <span class="small tone-${r.tara.tone}">(${r.tara.tone})</span>`;
+  $("#day-overall").innerHTML = `${stars(r.overall)}<small>ภาพรวม ${r.overall}/5</small>`;
+  $("#today-text").textContent = r.tara.text;
+  $("#today-moon").textContent = r.chandra.text;
+  $("#day-areas").innerHTML = r.areas.map((a) => `
+    <div class="day-area"><div class="top-line"><b>${a.th}</b><span class="stars">${stars(a.score)}</span></div>
+    <p class="small">${a.text}</p></div>`).join("");
+  $("#day-lucky").innerHTML = `
+    <div><span class="small muted">สีประจำวัน${r.color.th}</span><b><span class="dot" style="background:${r.color.hex}"></span> ${r.color.color}</b></div>
+    <div><span class="small muted">เลขวันส่วนตัว</span><b>${r.dayNumber}</b><span class="small">${r.dayTip}</span></div>
+    <div><span class="small muted">ช่วงเวลาดี</span><b>${r.good || "ไม่มี (วันพุธ)"}</b><span class="small">เหมาะเริ่มงาน นัดสำคัญ</span></div>
+    <div><span class="small muted">ช่วงควรเลี่ยง</span><b>${r.rahu}</b><span class="small">ราหูกาล ไม่เริ่มเรื่องใหม่</span></div>`;
+  $("#today-tech").textContent =
+    `ดวงจันทร์อยู่ฤกษ์${NAKSHATRAS[r.moon.index].th} ราศี${RASHIS[r.moon.rashi]} · ตารา ${r.taraNo} "${r.tara.name}" นับจากฤกษ์เกิด · เรือน ${r.house} นับจากราศีจันทร์เกิด · เวลาดี/ราหูกาลคิดจากพระอาทิตย์ขึ้นราว 6 โมง`;
+  document.querySelectorAll("[data-dd]").forEach((btn) => {
+    btn.disabled = Math.abs(dayOffset + Number(btn.dataset.dd)) > 7;
+  });
+}
+document.querySelectorAll("[data-dd]").forEach((btn) => btn.addEventListener("click", () => {
+  dayOffset += Number(btn.dataset.dd);
+  renderDaily();
+}));
 
 // ---------- เสาร์ทับ ----------
 const thaiShort = (t) => new Date(t).toLocaleDateString("th-TH", { timeZone: TZ, day: "numeric", month: "short", year: "numeric" });
@@ -332,7 +364,7 @@ const DASHA_COLOR = {
   rahu: "#a9a9b8", jupiter: "#f3d27a", saturn: "#a99bd6", mercury: "#9fd8b0",
 };
 const ym = (t) => new Date(t).toLocaleDateString("th-TH", { timeZone: TZ, month: "short", year: "numeric" });
-const stars = (n) => "★".repeat(Math.floor(n)) + (n % 1 ? "½" : "");
+function stars(n) { return "★".repeat(Math.floor(n)) + (n % 1 ? "½" : ""); }
 
 function renderDetail() {
   $("#detail-empty").hidden = !!profile;
@@ -377,11 +409,20 @@ function renderDetail() {
     })
     .join("");
 
+  // ภาพรวม: ด้านเด่น ด้านที่ต้องดูแล และเรื่องที่ดวงกำลังเปิดอยู่ตอนนี้
+  const ranked = [...r.areas].sort((a, b) => b.score - a.score || a.house - b.house);
+  const active = r.areas.filter((a) => a.timing.length);
+  $("#area-overview").innerHTML = `
+    <div class="ov"><span class="small muted">จุดแข็งของดวง</span><b>${ranked.slice(0, 3).map((a) => a.th).join(" · ")}</b></div>
+    <div class="ov"><span class="small muted">ด้านที่ควรดูแลเป็นพิเศษ</span><b>${ranked.slice(-2).map((a) => a.th).join(" · ")}</b></div>
+    <div class="ov"><span class="small muted">เรื่องที่ดวงกำลังเปิดตอนนี้</span><b>${active.length ? active.map((a) => a.th).join(" · ") : "ไม่มีเรื่องไหนถูกกระตุ้นเป็นพิเศษ ชีวิตเดินตามจังหวะปกติ"}</b></div>`;
+
   $("#area-list").innerHTML = r.areas
     .map((a) => `
       <details class="card area">
-        <summary><span>${a.th}</span><span class="stars">${stars(a.score)}<small>${a.summary}</small></span></summary>
+        <summary><span>${a.th}${a.timing.length ? ' <span class="now-tag">ช่วงนี้</span>' : ""}<small class="area-h">เรือน ${a.house}</small></span><span class="stars">${stars(a.score)}<small>${a.summary}</small></span></summary>
         <ul>${a.lines.map((l) => `<li>${l}</li>`).join("")}</ul>
+        ${a.timing.map((t) => `<p class="timing ${t.good ? "good" : "care"}"><b>ช่วงนี้:</b> ${t.text}</p>`).join("")}
         <p class="mission-line"><b>ภารกิจ:</b> ${a.mission}</p>
       </details>`)
     .join("");
@@ -668,7 +709,10 @@ const mapLink = (q) => "https://www.google.com/maps/search/?api=1&query=" + enco
 
 // ---------- แผนที่มู ----------
 const WISH_TH = { money: "การเงิน", love: "ความรัก", work: "การงาน", health: "สุขภาพ", luck: "โชคลาภ", family: "ครอบครัว" };
-const AREA_WISH = { self: "luck", money: "money", love: "love", work: "work", health: "health", home: "family" };
+const AREA_WISH = {
+  self: "luck", money: "money", love: "love", work: "work", health: "health", home: "family",
+  talk: "work", study: "luck", change: "health", luck: "luck", gain: "money", away: "health",
+};
 let gpsOrigin = null; // ตำแหน่งจากมือถือ ใช้ในเครื่องเท่านั้น ไม่ส่งออก ไม่บันทึก
 
 function currentOrigin() {
@@ -869,7 +913,7 @@ async function saveCard() {
   g.fillText(`สีมงคลวันเกิด: ${day.color}`, 540, 1170);
   g.fillStyle = "#b78cf2";
   g.font = "700 44px Mali";
-  g.fillText("มูดวง", 540, 1290);
+  g.fillText("ดาวเล่า", 540, 1290);
 
   const a = document.createElement("a");
   a.download = `muduang-${info.animal}.png`;
