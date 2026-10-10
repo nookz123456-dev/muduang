@@ -152,3 +152,26 @@ export const LUCKY = {
   rahu: { num: 4, color: "เทา ควันบุหรี่", dir: "ตะวันตกเฉียงใต้", day: "พุธกลางคืน" },
   ketu: { num: 7, color: "น้ำตาล ควันไฟ", dir: "ตะวันตกเฉียงเหนือ", day: "อังคาร" },
 };
+
+// ---------- เมตริกซ์ดาวตามลัคนา ----------
+export const PLANET_ROLE = {
+  sun: "ผู้นำ", moon: "ผู้ดูแล", mars: "นักลุย", mercury: "นักสื่อสาร", jupiter: "ที่ปรึกษา",
+  venus: "ศิลปิน", saturn: "นักสร้างระบบ", rahu: "นักบุกเบิก", ketu: "นักปราชญ์",
+};
+export const PLANET_ABBR = {
+  sun: "อา", moon: "จ", mars: "อ", mercury: "พ", jupiter: "พฤ", venus: "ศ", saturn: "ส", rahu: "รา", ketu: "เก",
+};
+
+// เจ้าเรือนตรีโกณ (1,5,9) ให้คุณ · เจ้าเกณฑ์+ตรีโกณ = โยคการกะ · เจ้าเรือน 6,8,12 ต้องระวัง
+export function planetMatrix(lagnaSign) {
+  const lord = (h) => SIGN_LORD[(lagnaSign + h - 1) % 12];
+  const houses = {};
+  for (let h = 1; h <= 12; h++) (houses[lord(h)] = houses[lord(h)] || []).push(h);
+  const has = (p, list) => (houses[p] || []).some((h) => list.includes(h));
+  const planets = Object.keys(houses);
+  const yogakaraka = planets.filter((p) => has(p, [4, 7, 10]) && has(p, [5, 9]) && p !== lord(1));
+  const benefic = planets.filter((p) => has(p, [1, 5, 9]) && !yogakaraka.includes(p));
+  const caution = planets.filter((p) => has(p, [6, 8, 12]) && !has(p, [1, 5, 9]) && !yogakaraka.includes(p));
+  const neutral = planets.filter((p) => ![...yogakaraka, ...benefic, ...caution].includes(p));
+  return { lagnaLord: lord(1), talentLord: lord(5), houses, yogakaraka, benefic, caution, neutral };
+}

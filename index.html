@@ -29,6 +29,7 @@
   <button role="tab" data-tab="detail" aria-selected="false">ละเอียด</button>
   <button role="tab" data-tab="mission" aria-selected="false">ภารกิจ</button>
   <button role="tab" data-tab="deity" aria-selected="false">องค์เทพ</button>
+  <button role="tab" data-tab="bazi" aria-selected="false">ดวงจีน</button>
   <button role="tab" data-tab="oracle" aria-selected="false">เสี่ยงทาย</button>
   <button role="tab" data-tab="couple" aria-selected="false">เช็คคู่</button>
 </nav>
@@ -83,6 +84,7 @@
         <div id="nc-result" hidden>
           <p class="letters" id="nc-letters"></p>
           <p id="nc-verdict"></p>
+          <p class="small" id="nc-number"></p>
         </div>
       </article>
 
@@ -126,6 +128,26 @@
         <h2 class="h-lagna" id="lagna-title"></h2>
         <p id="lagna-text"></p>
         <p class="warn small" id="lagna-note" hidden></p>
+      </article>
+
+      <article class="card">
+        <h3>ผังดวง</h3>
+        <p class="muted small">ราศีวางตายตัวแบบผังอินเดียใต้ ช่องกรอบม่วงคือลัคนา นับเรือนจากลัคนาวนตามเข็มนาฬิกา</p>
+        <div class="rasi" id="rasi-chart"></div>
+        <p class="small muted" id="rasi-legend"></p>
+      </article>
+
+      <article class="card">
+        <h3>เมตริกซ์ดาวประจำตัว</h3>
+        <p class="muted small">บทบาทของดาวแต่ละดวงสำหรับลัคนาของคุณ (ดาวเดียวกันให้ผลต่างกันในแต่ละลัคนา)</p>
+        <div class="matrix" id="planet-matrix"></div>
+        <div class="persona" id="persona"></div>
+      </article>
+
+      <article class="card">
+        <h3>เลขศาสตร์</h3>
+        <div class="numgrid" id="num-grid"></div>
+        <p class="small muted">เลขเส้นทางชีวิต = ผลรวมทุกหลักของวันเดือนปีเกิด (ค.ศ.) ทอนจนเหลือหลักเดียว ยกเว้น 11 22 33 ที่ถือเป็นเลขพิเศษ</p>
       </article>
 
       <article class="card">
@@ -209,6 +231,60 @@
       <details class="card how">
         <summary>คำนวณยังไง</summary>
         <p class="small" id="deity-how"></p>
+      </details>
+    </div>
+  </section>
+
+  <!-- ดวงจีน -->
+  <section id="tab-bazi" class="panel" hidden>
+    <p class="card empty" id="bazi-empty">กรอกวันเกิดที่แท็บ "ดวงฉัน" ก่อนนะ</p>
+    <div id="bazi-body" hidden>
+      <article class="card">
+        <div class="bz-head">
+          <div><p class="muted small">ดวงจีน สี่เสาชะตา (ปาจื้อ 八字)</p><h3 id="bz-date"></h3></div>
+          <label class="small">เพศ (ใช้คำนวณโชควัยจร)
+            <select id="bz-gender"><option value="">เลือก</option><option value="m">ชาย</option><option value="f">หญิง</option></select></label>
+        </div>
+        <div class="pillars" id="bz-pillars"></div>
+        <p class="warn small" id="bz-note" hidden></p>
+      </article>
+
+      <article class="card dm-card">
+        <p class="muted small">ธาตุประจำตัว (ราศีฟ้าของวันเกิด)</p>
+        <div class="dm-row"><span class="dm-zh" id="dm-zh"></span>
+          <div><h2 id="dm-name"></h2><p class="dm-poem" id="dm-poem"></p></div></div>
+        <p id="dm-text"></p>
+      </article>
+
+      <article class="card">
+        <h3>ความแข็งแรงของธาตุ</h3>
+        <div id="bz-bars"></div>
+        <p id="bz-verdict"></p>
+      </article>
+
+      <article class="card">
+        <h3>เมตริกซ์ธาตุ</h3>
+        <p class="muted small">ธาตุทั้ง 5 สัมพันธ์กับตัวคุณอย่างไร</p>
+        <div class="matrix" id="bz-matrix"></div>
+        <div class="lucky" id="bz-lucky"></div>
+        <p class="mission-line small" id="bz-mission"></p>
+      </article>
+
+      <article class="card">
+        <h3>โชควัยจร 10 ปี (大运)</h3>
+        <p class="muted small" id="luck-sub"></p>
+        <div class="luck-row" id="luck-row"></div>
+        <div id="luck-detail"></div>
+      </article>
+
+      <article class="card">
+        <h3>ดวงปีนี้ (流年)</h3>
+        <p id="bz-year"></p>
+      </article>
+
+      <details class="card how">
+        <summary>คำนวณยังไง</summary>
+        <p class="small">เสาปีและเสาเดือนแบ่งตามสารท 24 ฤดูจากตำแหน่งดวงอาทิตย์จริง ปีจีนทางโหราศาสตร์เริ่มที่ลี่ชุน (ราว 4 ก.พ.) ไม่ใช่วันตรุษจีน เสาวันนับวงรอบ 60 วันต่อเนื่อง เสายามแบ่งช่วงละ 2 ชั่วโมงตามเวลาไทย ความแข็งแรงของธาตุนับจากราศีฟ้า ราศีแฝงในกิ่ง และให้น้ำหนักกิ่งเดือนมากกว่า เป็นการประมาณเพื่อความเข้าใจ ซินแสแต่ละสำนักอาจตีความต่างกัน</p>
       </details>
     </div>
   </section>

@@ -232,3 +232,50 @@ select {
 .flip .tcard { width: 100%; height: 100%; }
 .tcard.art { padding: 0; border: 0; background: none; }
 #spread-read { transition: opacity 0.5s; }
+
+/* ผังดวงอินเดียใต้ */
+.rasi { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr); aspect-ratio: 1; border: 2px solid #d9c8ef; border-radius: 14px; overflow: hidden; margin: 10px 0; }
+.rasi .cell { border: 1px solid #ece2f6; padding: 4px; font-size: 0.78rem; min-width: 0; }
+.rasi .cell .sn { color: var(--muted); font-size: 0.68rem; }
+.rasi .cell .pl { display: flex; flex-wrap: wrap; gap: 2px 5px; font-weight: 700; color: var(--ink); }
+.rasi .cell.lagna { background: #f3eaff; box-shadow: inset 0 0 0 2px var(--accent); }
+.rasi .center { grid-column: 2 / 4; grid-row: 2 / 4; display: grid; place-items: center; text-align: center; background: #fbf7ff; color: var(--accent); font-weight: 700; padding: 6px; }
+.matrix { display: grid; gap: 8px; margin: 10px 0; }
+.matrix .row { display: grid; grid-template-columns: 104px 1fr; gap: 10px; align-items: center; background: #f7f1fb; border-radius: 12px; padding: 8px 12px; }
+.matrix .row b { font-size: 0.88rem; }
+.matrix .row .v { font-size: 0.9rem; }
+.matrix .row .v small { display: block; color: var(--muted); }
+.persona { background: linear-gradient(135deg, #f3eaff, #ffe8f1); border-radius: 14px; padding: 12px 14px; }
+.numgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 0; }
+.numgrid div { background: #f7f1fb; border-radius: 14px; padding: 10px 12px; }
+.numgrid b { font-size: 1.6rem; color: var(--accent); display: block; }
+
+/* ดวงจีน */
+.bz-head { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; }
+.bz-head h3 { margin: 0; }
+.bz-head label { font-weight: 600; max-width: 150px; margin: 0; }
+.pillars { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 10px; }
+.pillar { background: #fbf7ff; border-radius: 14px; padding: 8px 2px; text-align: center; min-width: 0; }
+.pillar.day { box-shadow: inset 0 0 0 2px var(--accent); }
+.pillar .ph { font-size: 0.75rem; color: var(--muted); }
+.pillar .god { font-size: 0.68rem; color: var(--accent); min-height: 1.2em; }
+.pillar .zh { font-size: 1.9rem; line-height: 1.15; font-weight: 700; }
+.pillar .el { display: inline-block; font-size: 0.64rem; border-radius: 999px; padding: 0 6px; color: #fff; }
+.pillar .nm { font-size: 0.72rem; }
+.pillar .hid { margin-top: 6px; font-size: 0.64rem; color: var(--muted); line-height: 1.35; }
+.pillar.empty .zh { color: #ccc; }
+.dm-row { display: flex; gap: 12px; align-items: center; }
+.dm-zh { font-size: 3rem; width: 78px; height: 78px; border-radius: 20px; display: grid; place-items: center; color: #fff; flex: 0 0 auto; }
+.dm-row h2 { margin: 0; }
+.dm-poem { margin: 2px 0 0; color: var(--muted); font-style: italic; }
+.ebar { display: grid; grid-template-columns: 54px 1fr 44px; gap: 8px; align-items: center; margin: 6px 0; font-size: 0.9rem; }
+.ebar .track { height: 12px; border-radius: 999px; background: #f4ecf9; overflow: hidden; }
+.ebar .track span { display: block; height: 100%; }
+.luck-row { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 10px; }
+.luck { flex: 0 0 auto; width: 66px; background: #fbf7ff; border-radius: 12px; padding: 6px; text-align: center; cursor: pointer; border: 2px solid transparent; font: inherit; color: var(--ink); }
+.luck.now { border-color: var(--accent); }
+.luck.sel { background: #f3eaff; }
+.luck .zh { font-size: 1.15rem; font-weight: 700; display: block; }
+.luck small { font-size: 0.68rem; color: var(--muted); }
+.tag-good { color: #2f9e64; font-weight: 700; }
+.tag-care { color: #d9822b; font-weight: 700; }

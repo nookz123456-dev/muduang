@@ -9,7 +9,11 @@ import { sadeSati } from "./sadesati.js";
 import { checkName, ROLE_MEANING } from "./taksa.js";
 import { PROVINCES, placeOf } from "./provinces.js";
 import { detailReading } from "./detail.js";
-import { HOUSE_TOPICS } from "./readings.js";
+import { HOUSE_TOPICS, planetMatrix, PLANET_ROLE, PLANET_ABBR } from "./readings.js";
+import { lifePath, nameNumber, NUMBER_TEXT, reduce } from "./numerology.js";
+import { baziChart, STEMS, STEM_TH, BRANCHES, BRANCH_TH, BRANCH_ANIMAL, ELEMENTS, ELEMENT_ZH, HIDDEN, BRANCH_ELEMENT,
+  stemElement, stemYang, tenGod, relation, yearPillarOf } from "./bazi.js";
+import { DAY_MASTER, RELATIONS, TEN_GOD_TEXT, ELEMENT_INFO, LUCK_THEME } from "./bazi_text.js";
 import { nearest, withDistance, BIRTH_STUPAS, zodiacYear, PLANET_DEITY_TAG } from "./places.js";
 import { DEITIES, ATMAKARAKA, NAK_DEITIES, PLANET_TH } from "./deities.js";
 
@@ -85,6 +89,7 @@ function showTab(name) {
   if (name === "deity") renderDeity();
   if (name === "detail") renderDetail();
   if (name === "oracle") renderOracle();
+  if (name === "bazi") renderBazi();
   try { sessionStorage.setItem("muduang.tab", name); } catch { /* ไม่เป็นไร */ }
 }
 document.querySelectorAll("[data-tab]").forEach((b) => b.addEventListener("click", () => showTab(b.dataset.tab)));
@@ -202,6 +207,8 @@ $("#name-form").addEventListener("submit", (e) => {
     verdict = `มีอักษรกาลกิณี ${r.kalakini.length} ตัว (${r.kalakini.map((c) => c.ch).join(" ")}) ตำราแนะนำให้เลี่ยงในชื่อเล่น ชื่อร้าน หรือชื่อแบรนด์ ` +
       `ถ้าเป็นชื่อจริงที่ใช้มานานแล้วไม่ต้องกังวลมาก การกระทำของเราสำคัญกว่าตัวอักษร${goodText}`;
   $("#nc-verdict").textContent = verdict;
+  const nn = nameNumber(e.target.n.value);
+  $("#nc-number").innerHTML = nn.total ? `<b>เลขศาสตร์ชื่อ:</b> ผลรวม ${nn.total} ทอนเหลือ ${nn.root} · ${NUMBER_TEXT[nn.root].th} – ${NUMBER_TEXT[nn.root].text}` : "";
 });
 
 
@@ -387,7 +394,143 @@ function renderDetail() {
 
   $("#planet-table").innerHTML = "<tr><th>ดาว</th><th>ราศี</th><th>เรือน</th></tr>" +
     r.planetsByHouse.map((x) => `<tr><td>${x.th}</td><td>${RASHIS[x.sign]}</td><td>${x.house}</td></tr>`).join("");
+  renderChartExtras(r, y, m, d);
 }
+
+// ---------- ผังดวง เมตริกซ์ดาว เลขศาสตร์ ----------
+// ผังอินเดียใต้: ราศีอยู่ช่องเดิมเสมอ [แถว, คอลัมน์]
+const RASI_POS = [[0, 1], [0, 2], [0, 3], [1, 3], [2, 3], [3, 3], [3, 2], [3, 1], [3, 0], [2, 0], [1, 0], [0, 0]];
+const planetNames = (list) => list.map((p) => `ดาว${PLANET_TH[p]}`).join(" ");
+
+function renderChartExtras(r, y, m, d) {
+  const bySign = {};
+  for (const x of r.planetsByHouse) (bySign[x.sign] = bySign[x.sign] || []).push(x.p);
+  const cells = RASI_POS.map(([row, col], sign) => {
+    const isLagna = sign === r.lagnaSign;
+    const pl = (bySign[sign] || []).map((p) => `<span>${PLANET_ABBR[p]}</span>`).join("");
+    return `<div class="cell ${isLagna ? "lagna" : ""}" style="grid-row:${row + 1};grid-column:${col + 1}">
+      <div class="sn">${RASHIS[sign]}${isLagna ? " · ลัคนา" : ""}</div><div class="pl">${pl}</div></div>`;
+  });
+  $("#rasi-chart").innerHTML = cells.join("") +
+    `<div class="center">${r.usingMoon ? "จันทรลัคนา" : "ลัคนา"}<br>ราศี${r.lagna.th}</div>`;
+  $("#rasi-legend").textContent = "อา=อาทิตย์ จ=จันทร์ อ=อังคาร พ=พุธ พฤ=พฤหัส ศ=ศุกร์ ส=เสาร์ รา=ราหู เก=เกตุ";
+
+  const mx = planetMatrix(r.lagnaSign);
+  const row = (label, list, note) => list.length
+    ? `<div class="row"><b>${label}</b><div class="v">${planetNames(list)}<small>${note} · ${list.map((p) => `เจ้าเรือน ${mx.houses[p].join(", ")}`).join(" / ")}</small></div></div>` : "";
+  $("#planet-matrix").innerHTML =
+    row("ดาวคุ้มครอง", [mx.lagnaLord], "เจ้าเรือนลัคนา พลังหลักของตัวคุณ") +
+    row("ดาวโยคะ", mx.yogakaraka, "คุมทั้งเรือนหลักและเรือนบุญ ดาวดีที่สุดของลัคนานี้") +
+    row("ดาวให้คุณ", mx.benefic.filter((p) => p !== mx.lagnaLord), "เจ้าเรือนบุญ (5, 9) นำโชคและความสำเร็จ") +
+    row("ดาวกลางๆ", mx.neutral, "ให้ผลตามตำแหน่งที่อยู่ในดวง") +
+    row("ดาวที่ต้องระวัง", mx.caution, "เจ้าเรือนอุปสรรค (6, 8, 12) ช่วงที่ดาวนี้เด่นควรรอบคอบ");
+  const main = mx.lagnaLord, talent = mx.talentLord;
+  $("#persona").innerHTML = `<b>บุคลิกหลัก: ${PLANET_ROLE[main]}</b> (ดาว${PLANET_TH[main]} เจ้าลัคนา)<br>` +
+    `<b>พรสวรรค์: ${PLANET_ROLE[talent]}</b> (ดาว${PLANET_TH[talent]} เจ้าเรือน 5 เรือนแห่งความคิดสร้างสรรค์)`;
+
+  const lp = lifePath(y, m, d), bd = reduce(d, false);
+  const name = profile.name ? nameNumber(profile.name) : null;
+  $("#num-grid").innerHTML =
+    `<div><span class="small muted">เลขเส้นทางชีวิต</span><b>${lp}</b><span class="small"><b style="font-size:inherit;display:inline;color:inherit">${NUMBER_TEXT[lp].th}</b> – ${NUMBER_TEXT[lp].text}</span></div>` +
+    `<div><span class="small muted">เลขวันเกิด (วันที่ ${d})</span><b>${bd}</b><span class="small"><b style="font-size:inherit;display:inline;color:inherit">${NUMBER_TEXT[bd].th}</b> – ${NUMBER_TEXT[bd].text}</span></div>` +
+    (name && name.total ? `<div style="grid-column:1/-1"><span class="small muted">เลขชื่อ "${profile.name}" (ผลรวม ${name.total})</span><b>${name.root}</b><span class="small">${NUMBER_TEXT[name.root].th} – ${NUMBER_TEXT[name.root].text}</span></div>` : "");
+}
+
+// ---------- ดวงจีน ----------
+const EL_HEX = ["#5fae6b", "#e8645a", "#c9a24a", "#9aa3ad", "#4f78c9"];
+const elTag = (el, yang) => `<span class="el" style="background:${EL_HEX[el]}">${yang === undefined ? "" : yang ? "+" : "-"}${ELEMENTS[el]}</span>`;
+const pillarName = (p) => `${STEMS[p.stem]}${BRANCHES[p.branch]}`;
+
+function renderBazi() {
+  $("#bazi-empty").hidden = !!profile;
+  $("#bazi-body").hidden = !profile;
+  if (!profile) return;
+  const g = store.get("gender", "");
+  $("#bz-gender").value = g;
+  const { y, m, d } = parseDate(profile.date);
+  const c = baziChart(y, m, d, profile.time || null, g === "" ? null : g === "m");
+  $("#bz-date").textContent = new Date(c.t).toLocaleString("th-TH", { timeZone: TZ, dateStyle: "medium", ...(profile.time ? { timeStyle: "short" } : {}) });
+
+  const heads = ["ยาม 時", "วัน 日", "เดือน 月", "ปี 年"];
+  $("#bz-pillars").innerHTML = c.pillars.map((p, i) => {
+    if (!p) return `<div class="pillar empty"><div class="ph">${heads[i]}</div><div class="god"></div><div class="zh">?</div><div class="nm">ไม่ทราบเวลาเกิด</div></div>`;
+    const god = i === 1 ? "ตัวเรา 日元" : `${tenGod(c.dm, p.stem).zh} ${TEN_GOD_TEXT[tenGod(c.dm, p.stem).zh].th}`;
+    const hid = HIDDEN[p.branch].map((s) => `${STEMS[s]} ${TEN_GOD_TEXT[tenGod(c.dm, s).zh].th}`).join("<br>");
+    return `<div class="pillar ${i === 1 ? "day" : ""}"><div class="ph">${heads[i]}</div><div class="god">${god}</div>
+      <div class="zh">${STEMS[p.stem]}</div><div class="nm">${STEM_TH[p.stem]}</div>${elTag(stemElement(p.stem), stemYang(p.stem))}
+      <div class="zh" style="margin-top:4px">${BRANCHES[p.branch]}</div><div class="nm">${BRANCH_TH[p.branch]} (${BRANCH_ANIMAL[p.branch]})</div>${elTag(BRANCH_ELEMENT[p.branch])}
+      <div class="hid">${hid}</div></div>`;
+  }).join("");
+  $("#bz-note").hidden = !!profile.time;
+  $("#bz-note").textContent = "ไม่ได้ใส่เวลาเกิด เสายามจึงว่างไว้ และความแข็งแรงของธาตุคิดจาก 3 เสา ใส่เวลาเกิดที่แท็บดวงฉันจะครบ 4 เสา";
+
+  const dmEl = stemElement(c.dm), dmText = DAY_MASTER[c.dm];
+  $("#dm-zh").textContent = STEMS[c.dm];
+  $("#dm-zh").style.background = EL_HEX[dmEl];
+  $("#dm-name").textContent = `${dmText.name} (${STEM_TH[c.dm]} ${STEMS[c.dm]})`;
+  $("#dm-poem").textContent = `${dmText.image}: "${dmText.poem}"`;
+  $("#dm-text").textContent = dmText.text;
+
+  $("#bz-bars").innerHTML = c.strength.pct.map((v, el) =>
+    `<div class="ebar"><span>${ELEMENT_ZH[el]} ${ELEMENTS[el]}</span><div class="track"><span style="width:${(v * 100).toFixed(0)}%;background:${EL_HEX[el]}"></span></div><span>${(v * 100).toFixed(0)}%</span></div>`).join("");
+  const sup = Math.round(c.strength.support * 100);
+  $("#bz-verdict").innerHTML = c.strength.strong
+    ? `ธาตุ${ELEMENTS[dmEl]}ของคุณ<b class="tag-good">แข็งแรง</b> (ธาตุตัวเองและธาตุแม่รวม ${sup}%) มีพลังพอจะรับงานใหญ่ ควรเสริมด้วยการระบายพลังออกสู่ผลงานและทรัพย์สิน`
+    : `ธาตุ${ELEMENTS[dmEl]}ของคุณ<b class="tag-care">ค่อนข้างอ่อน</b> (ธาตุตัวเองและธาตุแม่รวม ${sup}%) ควรเติมพลังด้วยการเรียนรู้ มีคนหนุน และดูแลตัวเองก่อนลุยงานหนัก`;
+
+  const order = ["resource", "companion", "output", "wealth", "officer"];
+  const elOf = (rel) => [...Array(5).keys()].find((e) => relation(dmEl, e) === rel);
+  $("#bz-matrix").innerHTML = order.map((rel) => {
+    const el = elOf(rel);
+    const tag = c.fav.good.includes(el) ? ' <span class="tag-good">· ธาตุเสริมดวง</span>' : c.fav.avoid.includes(el) ? ' <span class="tag-care">· ควรเลี่ยง</span>' : "";
+    return `<div class="row"><b>${RELATIONS[rel].th}</b><div class="v">${ELEMENT_ZH[el]} ธาตุ${ELEMENTS[el]}${tag}<small>${RELATIONS[rel].hint}</small></div></div>`;
+  }).join("");
+  const best = c.fav.good[0], info = ELEMENT_INFO[best];
+  $("#bz-lucky").innerHTML = `
+    <div><span class="small muted">ธาตุเสริมหลัก</span><b>${ELEMENT_ZH[best]} ${ELEMENTS[best]}</b></div>
+    <div><span class="small muted">สีเสริมดวง</span><b>${info.color}</b></div>
+    <div><span class="small muted">ทิศมงคล</span><b>${info.dir}</b></div>
+    <div><span class="small muted">ธาตุที่ควรเลี่ยง</span><b>${c.fav.avoid.map((e) => ELEMENTS[e]).join(" ")}</b></div>`;
+  $("#bz-mission").innerHTML = `<b>ภารกิจเสริมธาตุ${ELEMENTS[best]}:</b> ${info.act} <span class="muted">(มู: ${info.mu})</span>`;
+
+  if (!c.luck) {
+    $("#luck-sub").textContent = "เลือกเพศด้านบนก่อน ตำราจีนใช้เพศกับปีเกิดกำหนดว่าโชควัยจรเดินหน้าหรือถอยหลัง";
+    $("#luck-row").innerHTML = "";
+    $("#luck-detail").innerHTML = "";
+  } else {
+    const age = (Date.now() - c.t) / (365.2425 * 86400000);
+    const cur = c.luck.list.findIndex((p) => age >= p.age && age < p.age + 10);
+    $("#luck-sub").textContent = `เริ่มเสาแรกอายุ ${c.luck.startAge.toFixed(1)} ปี เปลี่ยนทุก 10 ปี (${c.luck.forward ? "เดินหน้า" : "ถอยหลัง"}) กดเลือกช่วงเพื่ออ่าน`;
+    $("#luck-row").innerHTML = c.luck.list.map((p, i) =>
+      `<button type="button" class="luck ${i === cur ? "now" : ""}" data-i="${i}"><small>อายุ ${Math.floor(p.age)}</small><span class="zh">${pillarName(p)}</span><small>${i === cur ? "ตอนนี้" : `${BRANCH_ANIMAL[p.branch]}`}</small></button>`).join("");
+    const show = (i) => {
+      const p = c.luck.list[i];
+      const tg = tenGod(c.dm, p.stem);
+      const els = [stemElement(p.stem), BRANCH_ELEMENT[p.branch]];
+      const score = els.filter((e) => c.fav.good.includes(e)).length - els.filter((e) => c.fav.avoid.includes(e)).length;
+      const verdict = score > 0 ? '<span class="tag-good">ช่วงเป็นใจ</span>' : score < 0 ? '<span class="tag-care">ช่วงต้องประคอง</span>' : "ช่วงกลางๆ";
+      document.querySelectorAll("#luck-row .luck").forEach((b) => b.classList.toggle("sel", Number(b.dataset.i) === i));
+      $("#luck-detail").innerHTML = `<p><b>อายุ ${Math.floor(p.age)}-${Math.floor(p.age) + 9} ปี · ${pillarName(p)} (${STEM_TH[p.stem]}${BRANCH_TH[p.branch]})</b> ${verdict}</p>
+        <p>${LUCK_THEME[tg.rel]}</p>
+        <p class="small muted">ราศีฟ้าเป็น ${tg.zh} ${TEN_GOD_TEXT[tg.zh].th}: ${TEN_GOD_TEXT[tg.zh].text} · ธาตุของช่วงนี้คือ${ELEMENTS[els[0]]}และ${ELEMENTS[els[1]]}</p>`;
+    };
+    $("#luck-row").onclick = (e) => { const b = e.target.closest(".luck"); if (b) show(Number(b.dataset.i)); };
+    show(cur >= 0 ? cur : 0);
+  }
+
+  const nowY = Number(dayKeyOf(new Date()).slice(0, 4));
+  const yp = yearPillarOf(nowY), ytg = tenGod(c.dm, yp.stem);
+  const yEls = [stemElement(yp.stem), BRANCH_ELEMENT[yp.branch]];
+  const ys = yEls.filter((e) => c.fav.good.includes(e)).length - yEls.filter((e) => c.fav.avoid.includes(e)).length;
+  $("#bz-year").innerHTML = `ปี ${nowY} คือปี <b>${pillarName(yp)}</b> (${STEM_TH[yp.stem]}${BRANCH_TH[yp.branch]} ธาตุ${ELEMENTS[yEls[0]]}/${ELEMENTS[yEls[1]]}) ` +
+    `สำหรับคุณเป็นปีแห่ง <b>${TEN_GOD_TEXT[ytg.zh].th}</b> ${TEN_GOD_TEXT[ytg.zh].text} ` +
+    (ys > 0 ? "ธาตุของปีช่วยเสริมดวง เหมาะกับการเริ่มสิ่งใหม่" : ys < 0 ? "ธาตุของปีไม่ค่อยเป็นใจ ใช้ปีนี้สะสมกำลังและรอบคอบเรื่องใหญ่" : "ธาตุของปีเป็นกลาง ผลขึ้นกับการลงมือของคุณเอง");
+}
+
+$("#bz-gender").addEventListener("change", (e) => {
+  store.set("gender", e.target.value);
+  renderBazi();
+});
 
 // ---------- เสี่ยงทาย ----------
 
