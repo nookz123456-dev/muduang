@@ -82,15 +82,15 @@ a { color: var(--accent); }
 /* แถบแท็บล่างแบบแอป */
 .tabs {
   position: fixed; left: 50%; bottom: 0; transform: translateX(-50%); z-index: 20;
-  width: min(100%, 560px); display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px;
-  padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+  width: min(100%, 560px); display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 1px;
+  padding: 8px 4px calc(8px + env(safe-area-inset-bottom));
   background: rgba(17, 17, 43, 0.82); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
   border-top: 1px solid var(--card-edge); border-radius: 22px 22px 0 0;
   box-shadow: 0 -8px 30px rgba(5, 4, 30, 0.5);
 }
 .tabs button {
-  position: relative; border: 0; background: none; color: var(--muted); font: inherit; font-size: 0.74rem;
-  font-weight: 600; padding: 14px 0 6px; border-radius: 14px; cursor: pointer; white-space: nowrap;
+  position: relative; border: 0; background: none; color: var(--muted); font: inherit; font-size: clamp(0.56rem, 2.85vw, 0.76rem);
+  font-weight: 600; padding: 14px 0 6px; border-radius: 12px; cursor: pointer; white-space: nowrap; letter-spacing: -0.2px;
   transition: color 0.25s, background 0.25s;
 }
 .tabs button::before {
@@ -499,3 +499,11 @@ fieldset, input, select { min-width: 0; }
 .jumps .chip:hover { border-color: var(--card-edge); color: var(--accent); }
 .jumps[hidden], .jumps .chip[hidden] { display: none; }
 [data-jump] { scroll-margin-top: 64px; }
+
+/* บทสวด */
+.chant { background: rgba(8, 8, 30, 0.4); border: 1px solid var(--card-edge); border-radius: 14px; padding: 12px 14px; margin: 8px 0 12px; }
+.chant p { margin: 0 0 8px; font-size: 1.02rem; line-height: 1.9; color: #f5ecd0; }
+.chant p:last-child { margin-bottom: 0; }
+.chant.mantra p { text-align: center; font-size: 1.15rem; font-weight: 700; color: var(--accent); }
+#chant-topic .chant { margin-top: 4px; }
+.chant .w { white-space: nowrap; }

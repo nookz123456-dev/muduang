@@ -39,6 +39,7 @@
   <button role="tab" data-tab="me" aria-selected="true">ดวงฉัน</button>
   <button role="tab" data-tab="detail" aria-selected="false">ละเอียด</button>
   <button role="tab" data-tab="mission" aria-selected="false">ภารกิจ</button>
+  <button role="tab" data-tab="fix" aria-selected="false">แก้ดวง</button>
   <button role="tab" data-tab="deity" aria-selected="false">องค์เทพ</button>
   <button role="tab" data-tab="bazi" aria-selected="false">ดวงจีน</button>
   <button role="tab" data-tab="oracle" aria-selected="false">เสี่ยงทาย</button>
@@ -246,6 +247,26 @@
   </section>
 
   <!-- องค์เทพ -->
+  <!-- แก้ดวง -->
+  <section id="tab-fix" class="panel" hidden>
+    <p class="card empty" id="fix-empty">กรอกวันเกิดที่แท็บ "ดวงฉัน" ก่อนนะ</p>
+    <div id="fix-body" hidden>
+      <article class="card" data-jump="บทสวดประจำตัว">
+        <h3>บทสวดประจำวันเกิด</h3>
+        <div id="chant-birth"></div>
+      </article>
+      <article class="card" data-jump="มนตร์องค์เทพ">
+        <h3>มนตร์บูชาองค์เทพประจำตัว</h3>
+        <div id="chant-deity"></div>
+      </article>
+      <article class="card" data-jump="มูเรื่องไหนสวดอะไร">
+        <h3>มูเรื่องไหน สวดบทไหน</h3>
+        <div class="chips topic-chips" id="chant-topics"></div>
+        <div id="chant-topic"></div>
+      </article>
+    </div>
+  </section>
+
   <section id="tab-deity" class="panel" hidden>
     <p class="card empty" id="deity-empty">กรอกวันเกิดที่แท็บ "ดวงฉัน" ก่อนนะ</p>
     <div id="deity-body" hidden>

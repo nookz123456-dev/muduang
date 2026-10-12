@@ -16,6 +16,7 @@ import { baziMatch } from "./bazi_match.js";
 import { findStars, yearStars } from "./shensha.js";
 import { qimenChart, PALACE_DIR, PALACE_ZH } from "./qimen.js";
 import { DOOR_INFO, DEITY_INFO, THREE_WONDERS, starInfo, palaceScore } from "./qimen_text.js";
+import { BIRTH_CHANTS, DEITY_MANTRAS, PLANET_MANTRA, BUDDHIST, TOPIC_CHANTS } from "./chants.js";
 import { HOUSE_TOPICS, planetMatrix, PLANET_ROLE, PLANET_ABBR } from "./readings.js";
 import { lifePath, nameNumber, NUMBER_TEXT, reduce } from "./numerology.js";
 import { baziChart, STEMS, STEM_TH, BRANCHES, BRANCH_TH, BRANCH_ANIMAL, ELEMENTS, ELEMENT_ZH, HIDDEN, BRANCH_ELEMENT,
@@ -95,6 +96,7 @@ function showTab(name) {
   window.scrollTo({ top: 0, behavior: "instant" }); // แท็บอยู่ด้านล่าง: เปิดแท็บใหม่ให้เริ่มที่หัวหน้า
   if (name === "mission") renderMissions();
   if (name === "deity") renderDeity();
+  if (name === "fix") renderFix();
   if (name === "detail") renderDetail();
   if (name === "oracle") renderOracle();
   if (name === "bazi") renderBazi();
@@ -1205,6 +1207,62 @@ async function saveCard() {
   }
 }
 $("#save-card").addEventListener("click", saveCard);
+
+// ---------- แก้ดวง: บทสวดประจำตัว ----------
+let fixTopic = "money";
+// ห่อทีละคำ ไม่ให้เบราว์เซอร์ตัดบรรทัดกลางคำบาลี (คนสวดจะอ่านผิดจังหวะ)
+const wordsNoBreak = (l) => l.split(" ").map((w) => `<span class="w">${w}</span>`).join(" ");
+const chantBlock = (lines, cls = "") => `<div class="chant ${cls}">${lines.map((l) => `<p>${wordsNoBreak(l)}</p>`).join("")}</div>`;
+
+function chantFor([kind, key, rounds]) {
+  const age = Number(dayKeyOf(new Date()).slice(0, 4)) - parseDate(profile.date).y;
+  const r = rounds === "age" ? `${age + 1} จบ (อายุ ${age} ปี บวก 1 ตามความเชื่อไทย)` : rounds;
+  if (kind === "mantra") {
+    const m = DEITY_MANTRAS[key];
+    return `<p class="small muted">มนตร์ ${m.deva} · สวด ${r}</p>${chantBlock([m.th], "mantra")}`;
+  }
+  if (kind === "birth") {
+    const b = BIRTH_CHANTS[profile.dayIdx];
+    return `<p class="small muted">บทสวดประจำวันเกิดของคุณ (${b.from}) · ${b.rounds} จบ</p>${chantBlock(b.text)}`;
+  }
+  const c = BUDDHIST[key];
+  return `<p class="small muted">${c.th} · ${r}</p>${chantBlock(c.text)}`;
+}
+
+function renderFix() {
+  $("#fix-empty").hidden = !!profile;
+  $("#fix-body").hidden = !profile;
+  if (!profile) return;
+  const day = THAI_DAYS[profile.dayIdx];
+  const b = BIRTH_CHANTS[profile.dayIdx];
+  $("#chant-birth").innerHTML = `
+    <p>คนเกิดวัน${day.th} พระประจำวันคือ<b>${day.buddha}</b> สวด <b>${b.rounds} จบ</b> ตามกำลังวัน</p>
+    <p class="small muted">มาจาก${b.from} · สวดก่อนนอนหรือหลังตื่นนอน จุดธูป 1 ดอกหรือไม่จุดก็ได้ ตั้งใจสวดช้าๆ สำคัญกว่าจำนวน</p>
+    ${chantBlock(b.text)}
+    <p class="mission-line small"><b>ทำจริง:</b> สวดจบแล้วนั่งเงียบๆ 1 นาที นึกถึงสิ่งที่จะทำดีวันนี้ 1 อย่าง</p>`;
+
+  const planet = profile.ishta.deityPlanet;
+  const deity = DEITIES[planet];
+  const m = DEITY_MANTRAS[PLANET_MANTRA[planet]];
+  $("#chant-deity").innerHTML = `
+    <p>องค์เทพประจำตัวของคุณคือ <b>${deity.th}</b> (ดูเหตุผลในแท็บองค์เทพ)</p>
+    <p class="small muted">${m.deva} · สวด 9, 21 หรือ 108 ครั้ง ใช้ลูกประคำนับก็ได้</p>
+    ${chantBlock([m.th], "mantra")}
+    <p class="small">ของถวาย: ${deity.offering}</p>
+    <p class="mission-line small"><b>ทำจริง:</b> ${deity.act}</p>`;
+
+  $("#chant-topics").innerHTML = Object.entries(TOPIC_CHANTS)
+    .map(([k, t]) => `<button type="button" class="chip" data-ct="${k}" aria-pressed="${k === fixTopic}">${t.th}</button>`).join("");
+  const t = TOPIC_CHANTS[fixTopic];
+  $("#chant-topic").innerHTML = t.chants.map(chantFor).join("") +
+    `<p class="mission-line small"><b>ทำจริง:</b> ${t.act}</p>`;
+}
+$("#chant-topics").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-ct]");
+  if (!b) return;
+  fixTopic = b.dataset.ct;
+  renderFix();
+});
 
 // ---------- แถบทางลัดในแท็บยาว (สร้างจาก data-jump ของการ์ด) ----------
 document.querySelectorAll(".panel").forEach((panel) => {
