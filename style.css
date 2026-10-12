@@ -568,7 +568,7 @@ fieldset, input, select { min-width: 0; }
 .jr-btns .chip:hover { border-color: var(--card-edge); color: var(--accent); }
 .jr-form { margin: 4px 0 10px; }
 .jr-sum b { color: var(--accent); }
-.yr-list { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin: 8px 0 2px; }
+.yr-list { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin: 8px 0 2px; }
 .yr-note { grid-column: 1 / -1; }
 .yr-list span { background: var(--tile); border-radius: 10px; padding: 6px 8px; text-align: center; }
 .yr-list small { display: block; font-size: 0.66rem; color: var(--muted); line-height: 1.3; }

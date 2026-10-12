@@ -425,8 +425,8 @@ $("#phone-form").addEventListener("submit", (e) => {
   $("#ph-tip").innerHTML = tip;
 });
 
-// ปีเกิด 3 แบบ: สูติบัตร (ขึ้น 1 ค่ำ เดือนอ้าย ~ธ.ค. ปีก่อน) · ไทยดั้งเดิม (ปีใหม่ที่สงกรานต์) · จีน (ลี่ชุน ~4 ก.พ.)
-// คนเกิดช่วงต้นปีจะได้คนละปี ทุกแบบถูกตามตำราของตัวเอง จึงบอกครบให้คนเลือกเอง
+// ปีเกิด 2 แบบที่แสดง: ไทยดั้งเดิม (ปีใหม่ที่สงกรานต์) · จีน (ลี่ชุน ~4 ก.พ.) ผู้ใช้ไม่เอาแบบสูติบัตรบนหน้าจอ
+// คนเกิดช่วงต้นปีจะได้คนละปี ทั้งสองแบบถูกตามตำราของตัวเอง จึงบอกคู่กันให้คนเลือกเอง
 function birthYear() {
   const { y, m, d } = parseDate(profile.date);
   const [hh, mm] = profile.time ? profile.time.split(":").map(Number) : [12, 0];
@@ -434,8 +434,7 @@ function birthYear() {
   const trad = zodiacYear(y, m, d);
   const cn = yearPillar(thaiDate(y, m, d, hh, mm).getTime(), y);
   const el = ELEMENTS[stemElement(cn.stem)] + (stemYang(cn.stem) ? "หยาง" : "หยิน");
-  const all = [tz.branch, trad, cn.branch];
-  return { tz, trad, cn, el, be: y + 543, same: all.every((b) => b === all[0]) };
+  return { tz, trad, cn, el, be: y + 543, same: trad === cn.branch };
 }
 const yName = (b) => `${BRANCH_TH[b]} (${BRANCH_ANIMAL[b]})`;
 
@@ -443,29 +442,27 @@ function renderHello() {
   const b = birthYear();
   const cnText = `${STEMS[b.cn.stem]}${BRANCHES[b.cn.branch]} ${BRANCH_ANIMAL[b.cn.branch]}ธาตุ${b.el}`;
   const years = b.same
-    ? `<p class="hi-year">เกิดปี<b>${b.tz.th}</b> (${b.tz.animal}) · พ.ศ. ${b.be}</p><p class="small muted">ตรงกันทุกตำรา · ปีจีน ${cnText} · ฤกษ์${profile.info.th}</p>`
+    ? `<p class="hi-year">เกิดปี<b>${BRANCH_TH[b.trad]}</b> (${BRANCH_ANIMAL[b.trad]}) · พ.ศ. ${b.be}</p><p class="small muted">ตรงกันทั้งไทยและจีน · ปีจีน ${cnText} · ฤกษ์${profile.info.th}</p>`
     : `<p class="hi-year">พ.ศ. ${b.be} · ฤกษ์${profile.info.th}</p>`;
   const multi = b.same ? "" : `
     <div class="yr-list">
-      <span><small>ตามสูติบัตร</small><b>ปี${yName(b.tz.branch)}</b></span>
       <span><small>ไทยดั้งเดิม</small><b>ปี${yName(b.trad)}</b></span>
       <span><small>ตำราจีน</small><b>ปี${yName(b.cn.branch)}</b></span>
     </div>
-    <p class="small muted yr-note">เกิดต้นปี แต่ละตำรานับปีใหม่ต่างกัน สูติบัตรนับที่ขึ้น 1 ค่ำ เดือนอ้าย (~ธ.ค.) ไทยดั้งเดิมนับที่สงกรานต์ จีนนับที่ลี่ชุน (~4 ก.พ.) ถูกทุกแบบ ใช้แบบที่คุณนับมาแต่เดิมได้เลย · ธาตุปีจีน ${b.el}</p>`;
+    <p class="small muted yr-note">เกิดต้นปี ไทยดั้งเดิมนับปีใหม่ที่สงกรานต์ ส่วนจีนนับที่ลี่ชุน (~4 ก.พ.) ถูกทั้งสองแบบ ใช้แบบที่คุณนับมาแต่เดิมได้เลย · ธาตุปีจีน ${b.el}</p>`;
   $("#hello").innerHTML = `
     <div class="hi-pic" style="background:${profile.animal.color}"><img src="${imgOf(profile.info.animal)}" alt=""></div>
     <div><p class="hi-name">${profile.name ? `สวัสดี ${profile.name}` : "สวัสดี"}</p>${years}</div>${multi}`;
   $("#birth-year").innerHTML = b.same
-    ? `เกิดปี<b>${b.tz.th}</b> · ${BRANCH_ANIMAL[b.cn.branch]}ธาตุ${b.el} · พ.ศ. ${b.be}`
-    : `ปี<b>${b.tz.th}</b> ตามสูติบัตร · ปี<b>${BRANCH_TH[b.trad]}</b> แบบไทยดั้งเดิม · ปี<b>${BRANCH_TH[b.cn.branch]}</b> แบบจีน`;
+    ? `เกิดปี<b>${BRANCH_TH[b.trad]}</b> · ${BRANCH_ANIMAL[b.cn.branch]}ธาตุ${b.el} · พ.ศ. ${b.be}`
+    : `ปี<b>${BRANCH_TH[b.trad]}</b> แบบไทย · ปี<b>${BRANCH_TH[b.cn.branch]}</b> แบบจีน · พ.ศ. ${b.be}`;
 }
 
 // ชิปปีนักษัตรบนการ์ดสัตว์ (ใช้ข้อมูลเดียวกับ birthYear)
 function zodiacChip() {
   const b = birthYear();
-  const near = b.tz.near ? " · เกิดคาบเกี่ยววันเปลี่ยนปี เช็คสูติบัตรอีกที" : "";
-  return b.same ? `ปี${yName(b.tz.branch)} ตรงกันทุกตำรา${near}`
-    : `สูติบัตร: ${BRANCH_TH[b.tz.branch]} · ไทยดั้งเดิม: ${BRANCH_TH[b.trad]} · จีน: ${BRANCH_TH[b.cn.branch]}${near}`;
+  return b.same ? `ปี${yName(b.trad)} ตรงกันทั้งไทยและจีน`
+    : `ไทย: ปี${BRANCH_TH[b.trad]} · จีน: ปี${BRANCH_TH[b.cn.branch]}`;
 }
 
 // ---------- เสาร์ทับ ----------
