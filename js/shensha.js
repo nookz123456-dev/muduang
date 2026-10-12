@@ -1,6 +1,5 @@
 // ดาวมงคล/ดาวร้ายในดวงจีน (神煞) เลือกเฉพาะดวงที่ตำราส่วนใหญ่ใช้กฎตรงกัน
 // กิ่ง 0=子 ... 11=亥 · ก้าน 0=甲 ... 9=癸 · คำอธิบายเขียนเองทั้งหมด
-import { yearPillarOf } from "./bazi.js";
 
 // กลุ่มสามประสานของกิ่ง: 申子辰=0 (น้ำ), 亥卯未=1 (ไม้), 寅午戌=2 (ไฟ), 巳酉丑=3 (ทอง)
 const TRINE_GROUP = [0, 3, 2, 1, 0, 3, 2, 1, 0, 3, 2, 1];
@@ -68,9 +67,8 @@ export function findStars(pillars) {
   return out;
 }
 
-// ปีจร: กิ่งของปีนั้นไปตรงกับเป้าของดาวไหน (ดาวที่ "มาเยือน" ปีนี้)
-export function yearStars(pillars, gregYear) {
-  const yb = yearPillarOf(gregYear).branch;
+// ปีจร: กิ่งของปีจีนนั้น (นับปีใหม่ที่ลี่ชุน) ไปตรงกับเป้าของดาวไหน (ดาวที่ "มาเยือน" ปีนี้)
+export function yearStars(pillars, yb) {
   const [, day, , year] = pillars;
   return STARS.filter((st) => {
     if (st.stem) return false;

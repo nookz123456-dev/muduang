@@ -5,7 +5,7 @@
 import { natalChart, dashas, houseOf } from "./chart.js";
 import { SIGN_LORD, planetMatrix, JUPITER_GOOD, PLANET_TH } from "./readings.js";
 import { siderealPositions } from "./planets.js";
-import { baziChart, yearPillarOf, stemElement, BRANCH_ELEMENT, STEMS, BRANCHES, ELEMENTS } from "./bazi.js";
+import { baziChart, yearPillar, stemElement, BRANCH_ELEMENT, STEMS, BRANCHES, ELEMENTS } from "./bazi.js";
 
 export const MONEY_DO = {
   sun: "เงินมาจากตำแหน่งและชื่อเสียง เหมาะขอเลื่อนขั้น รับงานที่ได้เป็นผู้นำ",
@@ -62,8 +62,8 @@ export function lifeline(p, years = 85) {
     const Jm = [2, 11].includes(jh) ? 1 : [5, 9].includes(jh) ? 0.4 : 0;
 
     // จีน: ปีนั้น + โชควัยจร
-    const gy = p.y + age;
-    const yp = yearPillarOf(gy);
+    const gy = new Date(t).getUTCFullYear();
+    const yp = yearPillar(t, gy); // ปีจีนเปลี่ยนที่ลี่ชุน ไม่ใช่ 1 ม.ค.
     const yEls = [stemElement(yp.stem), BRANCH_ELEMENT[yp.branch]];
     const a = elScore(yEls);
     let lp = null, l = 0, lm = 0;

@@ -72,7 +72,7 @@ export function baziMatch(p1, p2) {
     lines: [
       { th: "ธาตุประจำตัว", detail: `${STEMS[a.dm]} ธาตุ${ELEMENTS[stemElement(a.dm)]} กับ ${STEMS[b.dm]} ธาตุ${ELEMENTS[stemElement(b.dm)]} · ${dm.th}`, text: TEXT[dm.key], good: dm.pts > 0 },
       { th: "ตำแหน่งคู่ครอง (กิ่งวัน)", detail: `${BRANCHES[a.pillars[1].branch]} กับ ${BRANCHES[b.pillars[1].branch]} · ${day.th}`, text: DAY_TEXT[day.key], good: day.pts > 0 },
-      { th: "ปีนักษัตร", detail: `ปี${BRANCH_ANIMAL[a.pillars[3].branch]} กับ ปี${BRANCH_ANIMAL[b.pillars[3].branch]} · ${year.th}`, text: year.pts > 0 ? "ครอบครัวและคนรอบตัวของสองฝ่ายเข้ากันง่าย" : year.pts < 0 ? "ทัศนคติจากครอบครัวต่างกัน ค่อยๆ ทำความรู้จักครอบครัวของกันและกัน" : "ปีเกิดไม่ส่งไม่ขัดกัน", good: year.pts > 0 },
+      { th: "ปีนักษัตร (แบบจีน เริ่มปีที่ลี่ชุน ~4 ก.พ.)", detail: `ปี${BRANCH_ANIMAL[a.pillars[3].branch]} กับ ปี${BRANCH_ANIMAL[b.pillars[3].branch]} · ${year.th}`, text: year.pts > 0 ? "ครอบครัวและคนรอบตัวของสองฝ่ายเข้ากันง่าย" : year.pts < 0 ? "ทัศนคติจากครอบครัวต่างกัน ค่อยๆ ทำความรู้จักครอบครัวของกันและกัน" : "ปีเกิดไม่ส่งไม่ขัดกัน", good: year.pts > 0 },
       { th: "ธาตุเติมกัน", detail: `ธาตุเด่น: คนที่ 1 ${ELEMENTS[top(a)]} · คนที่ 2 ${ELEMENTS[top(b)]}`, text: `${fillText(aGets, "คนที่ 1", "คนที่ 2", ELEMENTS[top(b)])} · ${fillText(bGets, "คนที่ 2", "คนที่ 1", ELEMENTS[top(a)])}`, good: aGets + bGets > 0 },
     ],
   };

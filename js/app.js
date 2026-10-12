@@ -18,10 +18,11 @@ import { qimenChart, PALACE_DIR, PALACE_ZH } from "./qimen.js";
 import { DOOR_INFO, DEITY_INFO, THREE_WONDERS, starInfo, palaceScore } from "./qimen_text.js";
 import { BIRTH_CHANTS, DEITY_MANTRAS, PLANET_MANTRA, BUDDHIST, TOPIC_CHANTS } from "./chants.js";
 import { lifeline, windows, percentile, explainYear } from "./lifeline.js";
+import { thaiZodiac } from "./zodiac.js";
 import { HOUSE_TOPICS, planetMatrix, PLANET_ROLE, PLANET_ABBR, DASHA_TEXT } from "./readings.js";
 import { lifePath, nameNumber, NUMBER_TEXT, reduce } from "./numerology.js";
 import { baziChart, STEMS, STEM_TH, BRANCHES, BRANCH_TH, BRANCH_ANIMAL, ELEMENTS, ELEMENT_ZH, HIDDEN, BRANCH_ELEMENT,
-  stemElement, stemYang, tenGod, relation, yearPillarOf } from "./bazi.js";
+  stemElement, stemYang, tenGod, relation, yearPillarOf, yearPillar } from "./bazi.js";
 import { DAY_MASTER, RELATIONS, TEN_GOD_TEXT, ELEMENT_INFO, LUCK_THEME } from "./bazi_text.js";
 import { nearest, withDistance, BIRTH_STUPAS, zodiacYear, PLANET_DEITY_TAG } from "./places.js";
 import { DEITIES, ATMAKARAKA, NAK_DEITIES, PLANET_TH } from "./deities.js";
@@ -167,7 +168,8 @@ function renderMe() {
     <span class="chip">จันทร์ราศี${RASHIS[nak.rashi]}</span>
     <span class="chip">คณะ${{ D: "เทพ", M: "มนุษย์", R: "รากษส" }[info.gana]}</span>
     <span class="chip"><span class="dot" style="background:${day.hex}"></span>เกิดวัน${day.th} สี${day.color}</span>
-    <span class="chip">พระประจำวัน ${day.buddha}</span>`;
+    <span class="chip">พระประจำวัน ${day.buddha}</span>
+    <span class="chip">${zodiacChip()}</span>`;
 
   const unc = $("#uncertain");
   if (!nak.certain) {
@@ -360,6 +362,18 @@ $("#phone-form").addEventListener("submit", (e) => {
   }
   $("#ph-tip").innerHTML = tip;
 });
+
+// ปีนักษัตร 2 แบบ: ไทย (สูติบัตร เปลี่ยนวันขึ้น 1 ค่ำ เดือนอ้าย) และจีน (เปลี่ยนวันลี่ชุน ~4 ก.พ.)
+function zodiacChip() {
+  const { y, m, d } = parseDate(profile.date);
+  const [hh, mm] = profile.time ? profile.time.split(":").map(Number) : [12, 0];
+  const tz = thaiZodiac(y, m, d);
+  const cn = yearPillar(thaiDate(y, m, d, hh, mm).getTime(), y).branch;
+  const near = tz.near ? " · เกิดคาบเกี่ยววันเปลี่ยนปี เช็คสูติบัตรอีกที" : "";
+  return cn === tz.branch
+    ? `ปี${tz.th} (${tz.animal}) ตรงกันทั้งแบบไทยและจีน${near}`
+    : `ปีนักษัตรไทย: ${tz.th} · ปีจีน: ${BRANCH_TH[cn]} (${BRANCH_ANIMAL[cn]})${near}`;
+}
 
 // ---------- เสาร์ทับ ----------
 const thaiShort = (t) => new Date(t).toLocaleDateString("th-TH", { timeZone: TZ, day: "numeric", month: "short", year: "numeric" });
@@ -693,6 +707,9 @@ function renderBazi() {
       <div class="hid">${hid}</div></div>`;
   }).join("");
   $("#bz-note").hidden = !!profile.time;
+  const tz = thaiZodiac(y, m, d);
+  $("#bz-zodiac").hidden = tz.branch === c.pillars[3].branch;
+  $("#bz-zodiac").textContent = `เสาปีจีนของคุณคือปี${BRANCH_TH[c.pillars[3].branch]} แต่ในสูติบัตรไทยเป็นปี${tz.th} ไม่ได้ผิด ตำราจีนนับปีใหม่ที่ลี่ชุน (ราว 4 ก.พ.) ส่วนไทยนับที่ขึ้น 1 ค่ำ เดือนอ้าย (ราว ธ.ค. ปีก่อน) คนเกิดช่วงต้นปีจึงได้คนละปี`;
   $("#bz-note").textContent = "ไม่ได้ใส่เวลาเกิด เสายามจึงว่างไว้ และความแข็งแรงของธาตุคิดจาก 3 เสา ใส่เวลาเกิดที่แท็บดวงฉันจะครบ 4 เสา";
 
   const dmEl = stemElement(c.dm), dmText = DAY_MASTER[c.dm];
@@ -750,7 +767,7 @@ function renderBazi() {
   }
 
   const nowY = Number(dayKeyOf(new Date()).slice(0, 4));
-  const yp = yearPillarOf(nowY), ytg = tenGod(c.dm, yp.stem);
+  const yp = yearPillar(Date.now(), nowY), ytg = tenGod(c.dm, yp.stem); // ปีจีนเปลี่ยนที่ลี่ชุน (~4 ก.พ.) ไม่ใช่ 1 ม.ค.
   const yEls = [stemElement(yp.stem), BRANCH_ELEMENT[yp.branch]];
   const ys = yEls.filter((e) => c.fav.good.includes(e)).length - yEls.filter((e) => c.fav.avoid.includes(e)).length;
   $("#bz-year").innerHTML = `ปี ${nowY} คือปี <b>${pillarName(yp)}</b> (${STEM_TH[yp.stem]}${BRANCH_TH[yp.branch]} ธาตุ${ELEMENTS[yEls[0]]}/${ELEMENTS[yEls[1]]}) ` +
@@ -766,7 +783,7 @@ function renderBazi() {
     <p class="small"><span class="muted">อยู่ที่เสา${s.where.join(" และเสา")}</span><br>${s.text}<br><b>ทำจริง:</b> ${s.act}</p></div>`).join("");
   renderQimen();
   renderQimenBirth();
-  const visit = yearStars(c.pillars, nowY);
+  const visit = yearStars(c.pillars, yp.branch);
   if (visit.length) {
     $("#bz-year").innerHTML += `<br><br>ดาวที่มาเยือนปีนี้: ${visit.map((s) => `<b>${s.zh} ${s.th}</b>`).join(" · ")} ปีนี้เรื่องของดาวนี้จะเด่นขึ้น: ${visit.map((s) => s.text).join(" ")}`;
   }
@@ -1021,18 +1038,17 @@ function renderMuMap() {
   groups.push(group(`เติมด้าน${weakest.th}`, `ด้าน${weakest.th}ได้คะแนนน้อยที่สุดในดวงคุณ (${weakest.score}/5) ไปขอพรเรื่อง${WISH_TH[wish]}`,
     nearest({ wishes: [wish] }, origin, 2).map((p) => placeItem(p, `ขอเรื่อง${WISH_TH[wish]}`))));
 
-  const zy = zodiacYear(y, m, d);
-  const st = BIRTH_STUPAS[zy];
+  const tz = thaiZodiac(y, m, d);
+  const st = BIRTH_STUPAS[tz.branch];
   const stItems = [];
   if (st.province) stItems.push(placeItem(withDistance({ ...st, tags: [], wishes: [] }, origin)));
   else {
     stItems.push(`<li class="small muted">${st.name} อยู่ต่างประเทศ</li>`);
     if (st.alt) stItems.push(placeItem(withDistance({ ...st.alt, tags: [], wishes: [] }, origin), "ไหว้แทนในไทย"));
   }
-  const beforeSongkran = m < 4 || (m === 4 && d < 16);
-  const calYear = BIRTH_STUPAS[(((y - 4) % 12) + 12) % 12];
-  const why = "ตามตำราล้านนา (นับปีใหม่ที่สงกรานต์) ไหว้แล้วเป็นสิริมงคลกับชีวิต" +
-    (beforeSongkran ? ` · ถ้านับปีแบบปฏิทิน (1 ม.ค.) คุณจะเป็นปี${calYear.year} พระธาตุคือ${calYear.name}` : "");
+  const lanna = BIRTH_STUPAS[zodiacYear(y, m, d)];
+  const why = "นับปีนักษัตรแบบเดียวกับสูติบัตร ไหว้แล้วเป็นสิริมงคลกับชีวิต" +
+    (lanna !== st ? ` · ถ้านับแบบล้านนาโบราณ (ปีใหม่ที่สงกรานต์) คุณจะเป็นปี${lanna.year} พระธาตุคือ${lanna.name}` : "");
   groups.push(group(`พระธาตุประจำปีเกิด: ปี${st.year}`, why, stItems));
 
   $("#mu-groups").innerHTML = groups.join("");
