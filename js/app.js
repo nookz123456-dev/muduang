@@ -179,6 +179,8 @@ function renderMe() {
       : "วันเกิดของคุณดวงจันทร์ย้ายราศี ใส่เวลาเกิดจะแม่นขึ้น";
   } else unc.hidden = true;
 
+  renderHello();
+  renderJournal();
   dayOffset = 0;
   calNatal = null;
   const now = parseDate(dayKeyOf(new Date()));
@@ -207,6 +209,8 @@ function renderDaily() {
   $("#day-overall").innerHTML = `${stars(r.overall)}<small>ภาพรวม ${r.overall}/5</small>`;
   $("#today-text").textContent = r.tara.text;
   $("#today-moon").textContent = r.chandra.text;
+  const bestArea = [...r.areas].sort((p, q) => q.score - p.score)[0];
+  $("#today-why").innerHTML = `<b>ทำไมเป็นของคุณคนเดียว:</b> คิดจากฤกษ์เกิด${NAKSHATRAS[profile.nak.index].th}ของคุณ เทียบกับดวงจันทร์วันนั้นที่ฤกษ์${NAKSHATRAS[r.moon.index].th} และราศีจันทร์เกิด${RASHIS[profile.nak.rashi]} คนที่เกิดคนละวันจะได้ดวงวันเดียวกันไม่เหมือนกัน · วันนี้ด้าน<b>${bestArea.th}</b>เด่นที่สุดสำหรับคุณ`;
   $("#day-areas").innerHTML = r.areas.map((a) => `
     <div class="day-area"><div class="top-line"><b>${a.th}</b><span class="stars">${stars(a.score)}</span></div>
     <p class="small">${a.text}</p></div>`).join("");
@@ -226,6 +230,64 @@ document.querySelectorAll("[data-dd]").forEach((btn) => btn.addEventListener("cl
   renderDaily();
   syncCalendarToDay();
 }));
+
+// ---------- สมุดดวง: บันทึกว่าตรงไหม + ตั้งใจวันนี้ (ทำให้รู้สึกแม่นอย่างซื่อตรง: นับทั้งตรงและไม่ตรง) ----------
+const FIT_TH = { yes: "ตรง", some: "ตรงบางส่วน", no: "ไม่ตรง" };
+function readingFor(key) {
+  const b = parseDate(profile.date), dd = parseDate(key);
+  return dailyReading({ nakIndex: profile.nak.index, rashi: profile.nak.rashi, m: b.m, d: b.d }, dd.y, dd.m, dd.d);
+}
+function renderJournal() {
+  const j = store.get("journal", {});
+  const today = dayKeyOf(new Date());
+  const yest = dayKeyOf(new Date(Date.now() - 86400000));
+  const yr = readingFor(yest), y = j[yest] || {};
+
+  let html = `<div class="day-area"><p class="small muted">เมื่อวานดาวเล่าบอกว่า</p><b>${yr.tara.mood}</b>`;
+  html += y.fit
+    ? `<p class="small">คุณบันทึกว่า <b>${FIT_TH[y.fit]}</b></p>`
+    : `<p class="small">เป็นแบบนั้นจริงไหม</p><div class="jr-btns">${Object.entries(FIT_TH).map(([k, t]) => `<button type="button" class="chip" data-fit="${k}">${t}</button>`).join("")}</div>`;
+  if (y.intent) {
+    html += `<p class="small" style="margin-top:8px">เมื่อวานคุณตั้งใจว่า "${escapeHtml(y.intent)}"</p>` +
+      (y.done === undefined
+        ? `<div class="jr-btns"><button type="button" class="chip" data-done="1">ทำได้แล้ว</button><button type="button" class="chip" data-done="0">ยังไม่ได้</button></div>`
+        : `<p class="small ${y.done ? "tag-good" : "muted"}">${y.done ? "ทำได้แล้ว เก่งมาก" : "ยังไม่ได้ ไม่เป็นไร วันนี้เริ่มใหม่ได้"}</p>`);
+  }
+  $("#jr-yesterday").innerHTML = html + "</div>";
+
+  const tr = readingFor(today), best = [...tr.areas].sort((p, q) => q.score - p.score)[0], t = j[today] || {};
+  $("#jr-intent").innerHTML = t.intent
+    ? `<div class="day-area"><p class="small muted">วันนี้คุณตั้งใจว่า</p><b>${escapeHtml(t.intent)}</b><p class="small muted">พรุ่งนี้ดาวเล่าจะถามว่าทำได้ไหม</p></div>`
+    : `<form class="inline jr-form" id="jr-form"><input name="i" maxlength="80" placeholder="วันนี้ด้าน${best.th}เด่น ตั้งใจทำอะไรสักเรื่อง" required><button class="btn" type="submit">บันทึก</button></form>`;
+
+  const days = Object.keys(j).sort().slice(-30).map((k) => j[k]);
+  const n = (f) => days.filter((x) => x.fit === f).length;
+  const marked = n("yes") + n("some") + n("no");
+  const done = days.filter((x) => x.done === true).length, set = days.filter((x) => x.intent).length;
+  $("#jr-stats").innerHTML = marked || set
+    ? `<p class="small jr-sum">30 วันล่าสุด: ดวง<b>ตรง ${n("yes")}</b> · บางส่วน ${n("some")} · ไม่ตรง ${n("no")} วัน${set ? ` · ทำตามที่ตั้งใจได้ <b>${done}/${set}</b> ครั้ง` : ""}</p>`
+    : `<p class="small muted">เริ่มบันทึกวันนี้ อีกสักสัปดาห์จะเห็นว่าดวงกับชีวิตจริงของคุณไปทางเดียวกันแค่ไหน</p>`;
+}
+const escapeHtml = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+function saveJournal(key, patch) {
+  const j = store.get("journal", {});
+  j[key] = { ...(j[key] || {}), ...patch };
+  const keys = Object.keys(j).sort();
+  while (keys.length > 120) delete j[keys.shift()]; // เก็บแค่ 4 เดือนล่าสุด
+  store.set("journal", j);
+  renderJournal();
+}
+$("#jr-yesterday").addEventListener("click", (e) => {
+  const yest = dayKeyOf(new Date(Date.now() - 86400000));
+  const f = e.target.closest("[data-fit]"), d = e.target.closest("[data-done]");
+  if (f) saveJournal(yest, { fit: f.dataset.fit });
+  if (d) saveJournal(yest, { done: d.dataset.done === "1" });
+});
+$("#jr-intent").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const v = e.target.i.value.trim();
+  if (v) saveJournal(dayKeyOf(new Date()), { intent: v });
+});
 
 // ---------- ปฏิทินวันดีเฉพาะบุคคล ----------
 let calY = 0, calM = 0, calNatal = null, calPurpose = "open";
@@ -362,6 +424,27 @@ $("#phone-form").addEventListener("submit", (e) => {
   }
   $("#ph-tip").innerHTML = tip;
 });
+
+// ปีเกิดแบบเต็ม: ปีนักษัตรไทย (สูติบัตร) + ปีจีนพร้อมธาตุ + พ.ศ.
+function birthYear() {
+  const { y, m, d } = parseDate(profile.date);
+  const [hh, mm] = profile.time ? profile.time.split(":").map(Number) : [12, 0];
+  const tz = thaiZodiac(y, m, d);
+  const cn = yearPillar(thaiDate(y, m, d, hh, mm).getTime(), y);
+  const el = ELEMENTS[stemElement(cn.stem)] + (stemYang(cn.stem) ? "หยาง" : "หยิน");
+  return { tz, cn, el, be: y + 543, same: cn.branch === tz.branch };
+}
+
+function renderHello() {
+  const b = birthYear();
+  const cnText = `${STEMS[b.cn.stem]}${BRANCHES[b.cn.branch]} ${BRANCH_ANIMAL[b.cn.branch]}ธาตุ${b.el}`;
+  $("#hello").innerHTML = `
+    <div class="hi-pic" style="background:${profile.animal.color}"><img src="${imgOf(profile.info.animal)}" alt=""></div>
+    <div><p class="hi-name">${profile.name ? `สวัสดี ${profile.name}` : "สวัสดี"}</p>
+      <p class="hi-year">เกิดปี<b>${b.tz.th}</b> (${b.tz.animal}) · พ.ศ. ${b.be}</p>
+      <p class="small muted">ปีจีน ${cnText}${b.same ? "" : " (ตำราจีนนับปีใหม่ที่ลี่ชุน)"} · ฤกษ์${profile.info.th}</p></div>`;
+  $("#birth-year").innerHTML = `เกิดปี<b>${b.tz.th}</b> · ${BRANCH_ANIMAL[b.cn.branch]}ธาตุ${b.el} · พ.ศ. ${b.be}`;
+}
 
 // ปีนักษัตร 2 แบบ: ไทย (สูติบัตร เปลี่ยนวันขึ้น 1 ค่ำ เดือนอ้าย) และจีน (เปลี่ยนวันลี่ชุน ~4 ก.พ.)
 function zodiacChip() {

@@ -65,6 +65,8 @@
 
     <div id="me-result" hidden>
 
+      <div class="hello" id="hello"></div>
+
       <article data-jump="ดวงวันนี้" class="card today">
         <div class="day-nav">
           <button class="btn ghost" type="button" data-dd="-1" aria-label="วันก่อนหน้า">&lsaquo;</button>
@@ -77,8 +79,17 @@
         <p class="small" id="today-moon"></p>
         <div class="day-areas" id="day-areas"></div>
         <div class="lucky" id="day-lucky"></div>
+        <p class="small why-me" id="today-why"></p>
         <p class="small muted" id="today-tech"></p>
         <button class="btn" data-goto="mission">ไปทำภารกิจมูของวันนี้</button>
+      </article>
+
+      <article data-jump="สมุดดวง" class="card journal">
+        <h3>สมุดดวงของฉัน</h3>
+        <p class="small muted">บันทึกสั้นๆ วันละครั้ง ว่าดวงตรงกับชีวิตจริงแค่ไหน และวันนี้ตั้งใจทำอะไร เก็บไว้ในเครื่องคุณเท่านั้น</p>
+        <div id="jr-yesterday"></div>
+        <div id="jr-intent"></div>
+        <div id="jr-stats"></div>
       </article>
 
       <article data-jump="ปฏิทินวันดี" class="card cal">
@@ -154,6 +165,7 @@
         <div class="mascot-wrap"><img id="mascot-img" alt=""></div>
         <p class="muted small" id="nak-line"></p>
         <h2 id="animal-name"></h2>
+        <p class="birth-year" id="birth-year"></p>
         <p id="animal-trait"></p>
         <div class="chips" id="chips"></div>
         <p class="warn small" id="uncertain" hidden></p>
