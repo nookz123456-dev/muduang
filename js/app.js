@@ -17,7 +17,8 @@ import { findStars, yearStars } from "./shensha.js";
 import { qimenChart, PALACE_DIR, PALACE_ZH } from "./qimen.js";
 import { DOOR_INFO, DEITY_INFO, THREE_WONDERS, starInfo, palaceScore } from "./qimen_text.js";
 import { BIRTH_CHANTS, DEITY_MANTRAS, PLANET_MANTRA, BUDDHIST, TOPIC_CHANTS } from "./chants.js";
-import { HOUSE_TOPICS, planetMatrix, PLANET_ROLE, PLANET_ABBR } from "./readings.js";
+import { lifeline, windows, percentile, explainYear } from "./lifeline.js";
+import { HOUSE_TOPICS, planetMatrix, PLANET_ROLE, PLANET_ABBR, DASHA_TEXT } from "./readings.js";
 import { lifePath, nameNumber, NUMBER_TEXT, reduce } from "./numerology.js";
 import { baziChart, STEMS, STEM_TH, BRANCHES, BRANCH_TH, BRANCH_ANIMAL, ELEMENTS, ELEMENT_ZH, HIDDEN, BRANCH_ELEMENT,
   stemElement, stemYang, tenGod, relation, yearPillarOf } from "./bazi.js";
@@ -92,15 +93,15 @@ function todayInfo(profile) {
 // ---------- แท็บ ----------
 // แถบล่าง 5 กลุ่ม แต่ละกลุ่มแสดงหลาย section ต่อกัน (section เดิมคงไว้ทั้งหมด โค้ดคำนวณไม่ต้องแก้)
 const GROUPS = { today: ["me", "mission"], fix: ["fix", "deity"], oracle: ["oracle"], couple: ["couple"] };
-const CHART_SUBS = { india: ["mine", "detail"], china: ["bazi"], num: ["num"] };
+const CHART_SUBS = { life: ["life"], india: ["mine", "detail"], china: ["bazi"], num: ["num"] };
 // ชื่อแท็บเก่า (ลิงก์ในหน้า/ค่าที่จำไว้ใน sessionStorage) → กลุ่มใหม่
 const LEGACY_TAB = { me: "today", mission: "today", detail: "chart:india", bazi: "chart:china", deity: "fix" };
 const RENDER = {
   me: () => renderQimen(), mission: () => renderMissions(), mine: () => {}, num: () => renderDetail(),
   detail: () => renderDetail(), bazi: () => renderBazi(), fix: () => renderFix(), deity: () => renderDeity(),
-  oracle: () => renderOracle(), couple: () => {},
+  oracle: () => renderOracle(), couple: () => {}, life: () => renderLife(),
 };
-let chartSub = "india";
+let chartSub = "life";
 
 function showTab(name) {
   let [group, sub] = (LEGACY_TAB[name] || name).split(":");
@@ -143,7 +144,7 @@ let profile = null;
 function renderMe() {
   const form = $("#birth-form");
   // section ดวงหลัก / เลขและชื่อ ใช้ข้อมูลจากวันเกิดเดียวกัน
-  for (const id of ["mine", "num"]) {
+  for (const id of ["mine", "num", "life"]) {
     $(`#${id}-empty`).hidden = !!profile;
     $(`#${id}-body`).hidden = !profile;
   }
@@ -1244,6 +1245,88 @@ async function saveCard() {
   }
 }
 $("#save-card").addEventListener("click", saveCard);
+
+// ---------- เส้นชีวิต ----------
+let lifeCache = null;
+const SVGW = 600, SVGH = 400, X0 = 34, X1 = 586, Y0 = 368, Y1 = 26;
+const lx = (age) => X0 + (age / 85) * (X1 - X0);
+const ly = (v) => Y0 - (v / 100) * (Y0 - Y1);
+
+function renderLife() {
+  if (!profile) return;
+  const { y, m, d } = parseDate(profile.date);
+  const g = store.get("gender", "");
+  const key = `${profile.date}|${profile.time}|${profile.place}|${g}`;
+  if (!lifeCache || lifeCache.key !== key) {
+    lifeCache = { key, ...lifeline({ y, m, d, time: profile.time || null, place: placeOf(profile.place), male: g === "" ? null : g === "m" }) };
+  }
+  const L = lifeCache, pts = L.pts;
+  $("#life-gender").hidden = L.hasLuck;
+  const upT = percentile(pts, "overall", 0.75), lowT = percentile(pts, "overall", 0.2), monT = percentile(pts, "money", 0.8);
+  const ups = windows(pts, "overall", (v) => v >= upT), lows = windows(pts, "overall", (v) => v <= lowT), money = windows(pts, "money", (v) => v >= monT);
+  const nowAge = Math.max(0, Math.min(85, Number(dayKeyOf(new Date()).slice(0, 4)) - y));
+
+  const path = (k) => pts.map((p, i) => `${i ? "L" : "M"}${lx(p.age).toFixed(1)} ${ly(p[k]).toFixed(1)}`).join(" ");
+  const band = (w, cls) => `<rect class="${cls}" x="${lx(w.from - 0.5)}" y="${Y1}" width="${lx(w.to + 0.5) - lx(w.from - 0.5)}" height="${Y0 - Y1}" rx="6"/>`;
+  const ticks = Array.from({ length: 9 }, (_, i) => i * 10)
+    .map((a) => `<text x="${lx(a)}" y="${SVGH - 8}" text-anchor="middle">${a}</text>`).join("");
+  const peaks = money.map((w) => {
+    const best = pts.slice(w.from, w.to + 1).reduce((a, b) => (b.money > a.money ? b : a));
+    return `<circle class="pk" cx="${lx(best.age)}" cy="${ly(best.money)}" r="6"/>`;
+  }).join("");
+  $("#life-chart").innerHTML = `<svg viewBox="0 0 ${SVGW} ${SVGH}" role="img" aria-label="กราฟแนวโน้มดวงและการเงินตามอายุ">
+    ${ups.map((w) => band(w, "b-up")).join("")}${lows.map((w) => band(w, "b-low")).join("")}
+    <line class="ax" x1="${X0}" y1="${ly(50)}" x2="${X1}" y2="${ly(50)}"/>
+    <path class="ln-m" d="${path("money")}"/><path class="ln-o" d="${path("overall")}"/>${peaks}
+    <line class="now" x1="${lx(nowAge)}" y1="${Y1 - 6}" x2="${lx(nowAge)}" y2="${Y0}"/>
+    <text class="now-t" x="${lx(nowAge)}" y="${Y1 - 9}" text-anchor="middle">ตอนนี้</text>
+    <line class="sel" id="life-sel" x1="0" y1="${Y1}" x2="0" y2="${Y0}"/>
+    ${ticks}<text x="${X1}" y="${SVGH - 24}" text-anchor="end" class="unit">อายุ (ปี)</text></svg>`;
+  $("#life-chart svg").onclick = (e) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const age = Math.round(((e.clientX - r.left) / r.width * SVGW - X0) / (X1 - X0) * 85);
+    selectLifeAge(Math.max(0, Math.min(85, age)));
+  };
+
+  const be = (y0) => y0 + 543;
+  const span = (w) => `อายุ ${w.from}–${w.to} ปี (พ.ศ. ${be(y + w.from)}–${be(y + w.to)})`;
+  const future = (ws) => ws.filter((w) => w.to >= nowAge);
+  const list = (ws, empty) => (ws.length ? ws.map((w) => `<li>${span(w)}${w.from <= nowAge && nowAge <= w.to ? ' <span class="now-tag">ตอนนี้</span>' : ""}</li>`).join("") : `<li class="muted">${empty}</li>`);
+  $("#life-windows").innerHTML = `
+    <div class="day-area"><b class="tag-good">ช่วงขาขึ้น</b><p class="small muted">ดวงโดยรวมดีที่สุดในชีวิตคุณ เหมาะลงมือเรื่องใหญ่</p><ul class="life-list">${list(future(ups), "ช่วงขาขึ้นของคุณผ่านไปแล้ว ดูย้อนหลังได้ในกราฟ")}</ul></div>
+    <div class="day-area"><b style="color:var(--good)">ช่วงดวงหนุนเรื่องเงิน</b><p class="small muted">ช่วงที่ตำราว่าทรัพย์เข้าง่ายที่สุดของคุณ ไม่ได้แปลว่าเงินจะมาเอง ต้องเตรียมตัวไว้</p><ul class="life-list">${list(future(money), "ไม่มีช่วงเด่นชัดในอนาคต ใช้ความสม่ำเสมอสร้างทรัพย์")}</ul></div>
+    <div class="day-area"><b class="tag-care">ช่วงสะสมกำลัง</b><p class="small muted">ไม่ใช่ช่วงร้าย แต่ควรเก็บแรง เก็บเงิน และเลี่ยงความเสี่ยงก้อนใหญ่</p><ul class="life-list">${list(future(lows), "ไม่มีช่วงหนักชัดเจนข้างหน้า")}</ul></div>`;
+
+  const now = pts[nowAge], ex = explainYear(now);
+  const favEl = ELEMENT_INFO[L.fav.good[0]];
+  const deity = DEITIES[now.md.lord];
+  $("#life-todo").innerHTML = `
+    <p>ตอนนี้คุณอยู่ใน<b>${DASHA_TEXT[now.md.lord].title}</b> (ทศาดาว${PLANET_TH[now.md.lord]})</p>
+    <ul class="life-list">
+      <li><b>ชีวิต:</b> ${ex.todo}</li>
+      <li><b>การเงิน:</b> ${ex.money}</li>
+      <li><b>เสริมธาตุ:</b> ${favEl.mu} · ใช้สี${favEl.color} ทิศ${favEl.dir}</li>
+      <li><b>มูประจำช่วง:</b> ไหว้${deity.th} ถวาย${deity.offering}</li>
+      <li><b>ทำจริง:</b> ${deity.act}</li>
+    </ul>`;
+  const slider = $("#life-age");
+  slider.oninput = () => selectLifeAge(Number(slider.value));
+  selectLifeAge(nowAge);
+}
+
+function selectLifeAge(age) {
+  const pts = lifeCache.pts, p = pts[age], ex = explainYear(p);
+  $("#life-age").value = age;
+  const sel = $("#life-sel");
+  sel.setAttribute("x1", lx(age)); sel.setAttribute("x2", lx(age));
+  const lv = (v) => (v >= 65 ? "tag-good" : v <= 38 ? "tag-care" : "");
+  $("#life-year").innerHTML = `
+    <div class="top-line"><b>อายุ ${age} ปี · พ.ศ. ${p.year + 543}</b>
+      <span><span class="${lv(p.overall)}">ดวง ${p.overall}</span> · <span class="${lv(p.money)}">เงิน ${p.money}</span></span></div>
+    <ul class="life-list small">${ex.why.map((w) => `<li>${w}</li>`).join("")}</ul>
+    <p class="mission-line small"><b>ควรทำ:</b> ${ex.todo}</p>
+    <p class="small muted">${ex.money}</p>`;
+}
 
 // ---------- แก้ดวง: บทสวดประจำตัว ----------
 let fixTopic = "money";

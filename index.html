@@ -45,9 +45,10 @@
 
 <main>
   <nav class="subtabs" id="chart-subs" aria-label="ดวงฉัน" hidden>
-    <button type="button" data-sub="india" aria-pressed="true">ตำราอินเดีย</button>
-    <button type="button" data-sub="china" aria-pressed="false">ตำราจีน</button>
-    <button type="button" data-sub="num" aria-pressed="false">เลขและชื่อ</button>
+    <button type="button" data-sub="life" aria-pressed="false">เส้นชีวิต</button>
+    <button type="button" data-sub="india" aria-pressed="true">อินเดีย</button>
+    <button type="button" data-sub="china" aria-pressed="false">จีน</button>
+    <button type="button" data-sub="num" aria-pressed="false">เลข·ชื่อ</button>
   </nav>
   <nav class="jumps" id="jumps" aria-label="ไปยังหัวข้อ" hidden></nav>
   <!-- ดวงฉัน -->
@@ -211,6 +212,32 @@
           <p class="mission-line small" id="ph-tip"></p>
           <p class="small muted">คู่เลขใช้ตามที่ตำราไทยนิยมถือ คู่ที่ไม่มีในตำรานิยมดูจากความเป็นมิตรของดาว แต่ละสำนักให้ความหมายต่างกัน ถือเป็นเครื่องเตือนใจ ไม่ต้องรีบเปลี่ยนเบอร์</p>
         </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- ดวงฉัน: เส้นชีวิต -->
+  <section id="tab-life" class="panel" hidden>
+    <p class="card empty" id="life-empty">กรอกวันเกิดที่แท็บ "วันนี้" ก่อนนะ</p>
+    <div id="life-body" hidden>
+      <article data-jump="กราฟชีวิต" class="card">
+        <h3>เส้นชีวิตของคุณ</h3>
+        <p class="small muted">คะแนนรายปีจากทศาและดาวจรของตำราอินเดีย รวมกับโชควัยจรและธาตุประจำปีของตำราจีน เป็นแนวโน้มตามตำรา ไม่ใช่สิ่งที่ตายตัว การกระทำของคุณเปลี่ยนเส้นนี้ได้เสมอ</p>
+        <p class="small warn" id="life-gender" hidden>เลือกเพศในหัวข้อตำราจีนก่อน ระบบจะรวมโชควัยจร 10 ปีของจีนเข้ามาด้วย ตอนนี้ใช้ส่วนอื่นไปก่อน</p>
+        <div class="life-chart" id="life-chart"></div>
+        <p class="life-legend small"><span class="lg-o">ดวงโดยรวม</span><span class="lg-m">การเงิน</span><span class="lg-up">ช่วงขาขึ้น</span><span class="lg-low">ช่วงสะสมกำลัง</span></p>
+        <label class="small muted" for="life-age">เลื่อนดูทีละปี</label>
+        <input type="range" id="life-age" min="0" max="85" step="1">
+        <div class="life-year" id="life-year"></div>
+      </article>
+      <article data-jump="ช่วงสำคัญ" class="card">
+        <h3>ช่วงสำคัญในชีวิต</h3>
+        <div id="life-windows"></div>
+      </article>
+      <article data-jump="ทำอะไรให้ดีต่อดวง" class="card">
+        <h3>ทำอะไรให้ดีต่อดวงช่วงนี้</h3>
+        <div id="life-todo"></div>
+        <button class="btn ghost" type="button" data-goto="fix">ไปดูบทสวดและวิธีแก้ดวง</button>
       </article>
     </div>
   </section>
