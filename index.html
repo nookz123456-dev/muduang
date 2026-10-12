@@ -36,17 +36,20 @@
 </header>
 
 <nav class="tabs" role="tablist">
-  <button role="tab" data-tab="me" aria-selected="true">ดวงฉัน</button>
-  <button role="tab" data-tab="detail" aria-selected="false">ละเอียด</button>
-  <button role="tab" data-tab="mission" aria-selected="false">ภารกิจ</button>
-  <button role="tab" data-tab="fix" aria-selected="false">แก้ดวง</button>
-  <button role="tab" data-tab="deity" aria-selected="false">องค์เทพ</button>
-  <button role="tab" data-tab="bazi" aria-selected="false">ดวงจีน</button>
-  <button role="tab" data-tab="oracle" aria-selected="false">เสี่ยงทาย</button>
-  <button role="tab" data-tab="couple" aria-selected="false">เช็คคู่</button>
+  <button role="tab" data-tab="today" aria-selected="true"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><span>วันนี้</span></button>
+  <button role="tab" data-tab="chart" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/><path d="M17 3l.7 1.6L19.3 5l-1.6.7L17 7.3l-.7-1.6L14.7 5l1.6-.4z"/></svg><span>ดวงฉัน</span></button>
+  <button role="tab" data-tab="fix" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20c-4 0-7-2.5-8-6 2.5 0 5 1.2 8 6zM12 20c4 0 7-2.5 8-6-2.5 0-5 1.2-8 6z"/><path d="M12 20c-2-3-2-8 0-13 2 5 2 10 0 13z"/><path d="M12 20c-3.5-1.5-5.5-5-5-9 2.5 1.5 4.3 4.5 5 9zM12 20c3.5-1.5 5.5-5 5-9-2.5 1.5-4.3 4.5-5 9z"/></svg><span>แก้ดวง</span></button>
+  <button role="tab" data-tab="oracle" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="10" height="15" rx="2" transform="rotate(-8 9 12.5)"/><rect x="10" y="4" width="10" height="15" rx="2" transform="rotate(8 15 11.5)"/><path d="M15 9.5l.6 1.3 1.4.2-1 1 .2 1.4-1.2-.7-1.2.7.2-1.4-1-1 1.4-.2z"/></svg><span>เสี่ยงทาย</span></button>
+  <button role="tab" data-tab="couple" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 19S3 15 3 10a3.5 3.5 0 0 1 6.5-1.8A3.5 3.5 0 0 1 16 10c0 5-6.5 9-6.5 9z"/><path d="M16.5 15.5s3.5-2.2 3.5-5a2 2 0 0 0-3.7-1"/></svg><span>เช็คคู่</span></button>
 </nav>
 
 <main>
+  <nav class="subtabs" id="chart-subs" aria-label="ดวงฉัน" hidden>
+    <button type="button" data-sub="india" aria-pressed="true">ตำราอินเดีย</button>
+    <button type="button" data-sub="china" aria-pressed="false">ตำราจีน</button>
+    <button type="button" data-sub="num" aria-pressed="false">เลขและชื่อ</button>
+  </nav>
+  <nav class="jumps" id="jumps" aria-label="ไปยังหัวข้อ" hidden></nav>
   <!-- ดวงฉัน -->
   <section id="tab-me" class="panel">
     <form id="birth-form" class="card form">
@@ -60,14 +63,6 @@
     </form>
 
     <div id="me-result" hidden>
-      <article class="card mascot-card" id="mascot-card">
-        <div class="mascot-wrap"><img id="mascot-img" alt=""></div>
-        <p class="muted small" id="nak-line"></p>
-        <h2 id="animal-name"></h2>
-        <p id="animal-trait"></p>
-        <div class="chips" id="chips"></div>
-        <p class="warn small" id="uncertain" hidden></p>
-      </article>
 
       <article data-jump="ดวงวันนี้" class="card today">
         <div class="day-nav">
@@ -103,6 +98,66 @@
         <p class="small muted">ดูล่วงหน้า 60 วัน เลือก 3 วันที่ดีที่สุดสำหรับคุณ ไม่ได้ใช้แทนการปรึกษาซินแสหรือโหรสำหรับงานใหญ่</p>
       </article>
 
+      <article data-jump="ทิศมงคล" class="card qm">
+        <h3>ทิศมงคลยามนี้ (奇門遁甲)</h3>
+        <p class="muted small" id="qm-sub"></p>
+        <div class="qm-best" id="qm-best"></div>
+        <div class="qm-grid" id="qm-grid"></div>
+        <div class="cal-head">
+          <button class="btn ghost" type="button" data-qh="-1" aria-label="ยามก่อน">&lsaquo;</button>
+          <b id="qm-time"></b>
+          <button class="btn ghost" type="button" data-qh="1" aria-label="ยามถัดไป">&rsaquo;</button>
+        </div>
+        <p class="small muted">ผังด้านบนคือทิศใต้ตามแบบจีน เปลี่ยนทุกยาม (2 ชั่วโมง) ใช้เลือกทิศที่จะออกจากบ้าน นั่งทำงาน หรือหันหน้าตอนคุยเรื่องสำคัญ</p>
+      </article>
+
+
+
+
+      <div class="row">
+        <button class="btn ghost" id="save-card">แชร์การ์ดสตอรี่ดวงวันนี้</button>
+        <button class="btn ghost" id="edit-birth">แก้วันเกิด</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ภารกิจมู -->
+  <section id="tab-mission" class="panel" hidden>
+    <p class="card empty" id="mission-empty">กรอกวันเกิดที่แท็บ "วันนี้" ก่อนนะ</p>
+    <div id="mission-body" data-jump="ภารกิจมู" hidden>
+      <div class="card streak">
+        <div><span class="big" id="streak-num">0</span> วันติด</div>
+        <div class="muted small" id="streak-sub"></div>
+      </div>
+      <p class="muted small center" id="mission-theme"></p>
+      <ul class="missions" id="mission-list"></ul>
+
+      <article class="card reflect">
+        <h3>สัปดาห์นี้ชีวิตดีขึ้นไหม</h3>
+        <p class="muted small" id="reflect-sub"></p>
+        <div class="row" id="reflect-btns">
+          <button class="btn ghost" data-score="1">เหมือนเดิม</button>
+          <button class="btn ghost" data-score="2">ดีขึ้นนิดนึง</button>
+          <button class="btn ghost" data-score="3">ดีขึ้นชัดเจน</button>
+        </div>
+        <p class="small" id="reflect-done" hidden></p>
+      </article>
+    </div>
+  </section>
+
+  <!-- ดวงฉัน: ดวงหลัก -->
+  <section id="tab-mine" class="panel" hidden>
+    <p class="card empty" id="mine-empty">กรอกวันเกิดที่แท็บ "วันนี้" ก่อนนะ</p>
+    <div id="mine-body" hidden>
+      <article data-jump="สัตว์ประจำฤกษ์" class="card mascot-card" id="mascot-card">
+        <div class="mascot-wrap"><img id="mascot-img" alt=""></div>
+        <p class="muted small" id="nak-line"></p>
+        <h2 id="animal-name"></h2>
+        <p id="animal-trait"></p>
+        <div class="chips" id="chips"></div>
+        <p class="warn small" id="uncertain" hidden></p>
+      </article>
+
       <article data-jump="เสาร์ทับ" class="card saturn">
         <p class="muted small">ดาวเสาร์จร (สาเฑสาตี)</p>
         <h3 id="ss-title"></h3>
@@ -110,6 +165,18 @@
         <p class="small muted" id="ss-dates"></p>
         <p id="ss-text"></p>
         <p class="small" id="ss-mu" hidden></p>
+      </article>
+    </div>
+  </section>
+
+  <!-- ดวงฉัน: เลขและชื่อ -->
+  <section id="tab-num" class="panel" hidden>
+    <p class="card empty" id="num-empty">กรอกวันเกิดที่แท็บ "วันนี้" ก่อนนะ</p>
+    <div id="num-body" hidden>
+      <article data-jump="เลขศาสตร์" class="card">
+        <h3>เลขศาสตร์</h3>
+        <div class="numgrid" id="num-grid"></div>
+        <p class="small muted">เลขเส้นทางชีวิต = ผลรวมทุกหลักของวันเดือนปีเกิด (ค.ศ.) ทอนจนเหลือหลักเดียว ยกเว้น 11 22 33 ที่ถือเป็นเลขพิเศษ</p>
       </article>
 
       <article data-jump="เช็คชื่อ" class="card namecheck">
@@ -145,41 +212,12 @@
           <p class="small muted">คู่เลขใช้ตามที่ตำราไทยนิยมถือ คู่ที่ไม่มีในตำรานิยมดูจากความเป็นมิตรของดาว แต่ละสำนักให้ความหมายต่างกัน ถือเป็นเครื่องเตือนใจ ไม่ต้องรีบเปลี่ยนเบอร์</p>
         </div>
       </article>
-
-      <div class="row">
-        <button class="btn ghost" id="save-card">แชร์การ์ดสตอรี่ดวงวันนี้</button>
-        <button class="btn ghost" id="edit-birth">แก้วันเกิด</button>
-      </div>
-    </div>
-  </section>
-
-  <!-- ภารกิจมู -->
-  <section id="tab-mission" class="panel" hidden>
-    <p class="card empty" id="mission-empty">กรอกวันเกิดที่แท็บ "ดวงฉัน" ก่อนนะ</p>
-    <div id="mission-body" hidden>
-      <div class="card streak">
-        <div><span class="big" id="streak-num">0</span> วันติด</div>
-        <div class="muted small" id="streak-sub"></div>
-      </div>
-      <p class="muted small center" id="mission-theme"></p>
-      <ul class="missions" id="mission-list"></ul>
-
-      <article class="card reflect">
-        <h3>สัปดาห์นี้ชีวิตดีขึ้นไหม</h3>
-        <p class="muted small" id="reflect-sub"></p>
-        <div class="row" id="reflect-btns">
-          <button class="btn ghost" data-score="1">เหมือนเดิม</button>
-          <button class="btn ghost" data-score="2">ดีขึ้นนิดนึง</button>
-          <button class="btn ghost" data-score="3">ดีขึ้นชัดเจน</button>
-        </div>
-        <p class="small" id="reflect-done" hidden></p>
-      </article>
     </div>
   </section>
 
   <!-- ดวงละเอียด -->
   <section id="tab-detail" class="panel" hidden>
-    <p class="card empty" id="detail-empty">กรอกวันเกิดที่แท็บ "ดวงฉัน" ก่อนนะ</p>
+    <p class="card empty" id="detail-empty">กรอกวันเกิดที่แท็บ "วันนี้" ก่อนนะ</p>
     <div id="detail-body" hidden>
       <article data-jump="ลัคนา" class="card">
         <p class="muted small">ลัคนา (ราศีที่ขึ้นทางทิศตะวันออกตอนคุณเกิด)</p>
@@ -202,11 +240,6 @@
         <div class="persona" id="persona"></div>
       </article>
 
-      <article data-jump="เลขศาสตร์" class="card">
-        <h3>เลขศาสตร์</h3>
-        <div class="numgrid" id="num-grid"></div>
-        <p class="small muted">เลขเส้นทางชีวิต = ผลรวมทุกหลักของวันเดือนปีเกิด (ค.ศ.) ทอนจนเหลือหลักเดียว ยกเว้น 11 22 33 ที่ถือเป็นเลขพิเศษ</p>
-      </article>
 
       <article data-jump="ทศา" class="card">
         <p class="muted small">ทศา: ช่วงชีวิตที่คุณอยู่ตอนนี้</p>
@@ -246,10 +279,9 @@
     </div>
   </section>
 
-  <!-- องค์เทพ -->
   <!-- แก้ดวง -->
   <section id="tab-fix" class="panel" hidden>
-    <p class="card empty" id="fix-empty">กรอกวันเกิดที่แท็บ "ดวงฉัน" ก่อนนะ</p>
+    <p class="card empty" id="fix-empty">กรอกวันเกิดที่แท็บ "วันนี้" ก่อนนะ</p>
     <div id="fix-body" hidden>
       <article class="card" data-jump="บทสวดประจำตัว">
         <h3>บทสวดประจำวันเกิด</h3>
@@ -267,8 +299,9 @@
     </div>
   </section>
 
+  <!-- องค์เทพ -->
   <section id="tab-deity" class="panel" hidden>
-    <p class="card empty" id="deity-empty">กรอกวันเกิดที่แท็บ "ดวงฉัน" ก่อนนะ</p>
+    <p class="card empty" id="deity-empty">กรอกวันเกิดที่แท็บ "วันนี้" ก่อนนะ</p>
     <div id="deity-body" hidden>
       <article data-jump="องค์เทพ" class="card deity-card" id="deity-card">
         <svg class="lotus" viewBox="0 0 120 80" aria-hidden="true">
@@ -319,7 +352,7 @@
 
   <!-- ดวงจีน -->
   <section id="tab-bazi" class="panel" hidden>
-    <p class="card empty" id="bazi-empty">กรอกวันเกิดที่แท็บ "ดวงฉัน" ก่อนนะ</p>
+    <p class="card empty" id="bazi-empty">กรอกวันเกิดที่แท็บ "วันนี้" ก่อนนะ</p>
     <div id="bazi-body" hidden>
       <article data-jump="สี่เสา" class="card">
         <div class="bz-head">
@@ -371,18 +404,6 @@
         <p id="bz-year"></p>
       </article>
 
-      <article data-jump="ทิศมงคล" class="card qm">
-        <h3>ทิศมงคลยามนี้ (奇門遁甲)</h3>
-        <p class="muted small" id="qm-sub"></p>
-        <div class="qm-best" id="qm-best"></div>
-        <div class="qm-grid" id="qm-grid"></div>
-        <div class="cal-head">
-          <button class="btn ghost" type="button" data-qh="-1" aria-label="ยามก่อน">&lsaquo;</button>
-          <b id="qm-time"></b>
-          <button class="btn ghost" type="button" data-qh="1" aria-label="ยามถัดไป">&rsaquo;</button>
-        </div>
-        <p class="small muted">ผังด้านบนคือทิศใต้ตามแบบจีน เปลี่ยนทุกยาม (2 ชั่วโมง) ใช้เลือกทิศที่จะออกจากบ้าน นั่งทำงาน หรือหันหน้าตอนคุยเรื่องสำคัญ</p>
-      </article>
 
       <article data-jump="ฉีเหมินวันเกิด" class="card qm">
         <h3>ผังฉีเหมินวันเกิด</h3>

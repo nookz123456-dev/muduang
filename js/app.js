@@ -90,27 +90,63 @@ function todayInfo(profile) {
 }
 
 // ---------- แท็บ ----------
+// แถบล่าง 5 กลุ่ม แต่ละกลุ่มแสดงหลาย section ต่อกัน (section เดิมคงไว้ทั้งหมด โค้ดคำนวณไม่ต้องแก้)
+const GROUPS = { today: ["me", "mission"], fix: ["fix", "deity"], oracle: ["oracle"], couple: ["couple"] };
+const CHART_SUBS = { india: ["mine", "detail"], china: ["bazi"], num: ["num"] };
+// ชื่อแท็บเก่า (ลิงก์ในหน้า/ค่าที่จำไว้ใน sessionStorage) → กลุ่มใหม่
+const LEGACY_TAB = { me: "today", mission: "today", detail: "chart:india", bazi: "chart:china", deity: "fix" };
+const RENDER = {
+  me: () => renderQimen(), mission: () => renderMissions(), mine: () => {}, num: () => renderDetail(),
+  detail: () => renderDetail(), bazi: () => renderBazi(), fix: () => renderFix(), deity: () => renderDeity(),
+  oracle: () => renderOracle(), couple: () => {},
+};
+let chartSub = "india";
+
 function showTab(name) {
-  document.querySelectorAll(".tabs button").forEach((b) => b.setAttribute("aria-selected", b.dataset.tab === name));
-  document.querySelectorAll(".panel").forEach((p) => (p.hidden = p.id !== "tab-" + name));
+  let [group, sub] = (LEGACY_TAB[name] || name).split(":");
+  if (group !== "chart" && !GROUPS[group]) group = "today";
+  if (sub && CHART_SUBS[sub]) chartSub = sub;
+  const sections = group === "chart" ? CHART_SUBS[chartSub] : GROUPS[group];
+  document.querySelectorAll(".tabs button").forEach((b) => b.setAttribute("aria-selected", b.dataset.tab === group));
+  document.querySelectorAll(".panel").forEach((p) => (p.hidden = !sections.includes(p.id.slice(4))));
+  $("#chart-subs").hidden = group !== "chart";
+  document.querySelectorAll("[data-sub]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.sub === chartSub));
   window.scrollTo({ top: 0, behavior: "instant" }); // แท็บอยู่ด้านล่าง: เปิดแท็บใหม่ให้เริ่มที่หัวหน้า
-  if (name === "mission") renderMissions();
-  if (name === "deity") renderDeity();
-  if (name === "fix") renderFix();
-  if (name === "detail") renderDetail();
-  if (name === "oracle") renderOracle();
-  if (name === "bazi") renderBazi();
-  try { sessionStorage.setItem("muduang.tab", name); } catch { /* ไม่เป็นไร */ }
-  if (typeof refreshJumps === "function") refreshJumps();
+  sections.forEach((sec) => RENDER[sec]()); // ไม่มีวันเกิด แต่ละ section แสดงข้อความว่างของตัวเอง
+  // ยังไม่กรอกวันเกิด: แท็บวันนี้แสดงแค่ฟอร์ม
+  if (group === "today") $("#tab-mission").hidden = !profile;
+  try { sessionStorage.setItem("muduang.tab", group === "chart" ? `chart:${chartSub}` : group); } catch { /* ไม่เป็นไร */ }
+  refreshJumps();
 }
 document.querySelectorAll("[data-tab]").forEach((b) => b.addEventListener("click", () => showTab(b.dataset.tab)));
-document.querySelectorAll("[data-goto]").forEach((b) => b.addEventListener("click", () => showTab(b.dataset.goto)));
+document.querySelectorAll("[data-sub]").forEach((b) => b.addEventListener("click", () => showTab(`chart:${b.dataset.sub}`)));
+document.querySelectorAll("[data-goto]").forEach((b) => b.addEventListener("click", () => {
+  showTab(b.dataset.goto);
+  if (b.dataset.goto === "mission") $("#tab-mission").scrollIntoView({ behavior: "smooth", block: "start" });
+}));
+
+// แถบทางลัด: แถบเดียว สร้างใหม่ทุกครั้งที่เปลี่ยนแท็บ จากการ์ดที่มี data-jump และกำลังแสดงอยู่
+function refreshJumps() {
+  const nav = $("#jumps");
+  const targets = [...document.querySelectorAll(".panel:not([hidden]) [data-jump]")].filter((t) => t.offsetParent);
+  nav.hidden = targets.length < 3;
+  nav.innerHTML = targets.map((t, i) => `<button type="button" class="chip" data-j="${i}">${t.dataset.jump}</button>`).join("");
+  nav.onclick = (e) => {
+    const b = e.target.closest("[data-j]");
+    if (b) targets[Number(b.dataset.j)].scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+}
 
 // ---------- ดวงฉัน ----------
 let profile = null;
 
 function renderMe() {
   const form = $("#birth-form");
+  // section ดวงหลัก / เลขและชื่อ ใช้ข้อมูลจากวันเกิดเดียวกัน
+  for (const id of ["mine", "num"]) {
+    $(`#${id}-empty`).hidden = !!profile;
+    $(`#${id}-body`).hidden = !profile;
+  }
   if (!profile) {
     form.hidden = false;
     $("#me-result").hidden = true;
@@ -148,6 +184,7 @@ function renderMe() {
   renderCalendar();
   renderSaturn();
   renderNameSub();
+  if (!$("#tab-me").hidden) { $("#tab-mission").hidden = false; renderMissions(); } // เพิ่งกรอกวันเกิดในแท็บวันนี้
   refreshJumps();
 }
 
@@ -1264,36 +1301,6 @@ $("#chant-topics").addEventListener("click", (e) => {
   renderFix();
 });
 
-// ---------- แถบทางลัดในแท็บยาว (สร้างจาก data-jump ของการ์ด) ----------
-document.querySelectorAll(".panel").forEach((panel) => {
-  const targets = [...panel.querySelectorAll("[data-jump]")];
-  if (targets.length < 3) return;
-  const nav = document.createElement("nav");
-  nav.className = "jumps";
-  nav.setAttribute("aria-label", "ไปยังหัวข้อ");
-  nav.innerHTML = targets.map((t, i) => `<button type="button" class="chip" data-j="${i}">${t.dataset.jump}</button>`).join("");
-  nav.addEventListener("click", (e) => {
-    const b = e.target.closest("[data-j]");
-    if (b) targets[Number(b.dataset.j)].scrollIntoView({ behavior: "smooth", block: "start" });
-  });
-  panel.prepend(nav);
-  panel.jumpTargets = targets;
-});
-// ซ่อนทางลัดของการ์ดที่ยังไม่แสดง (เช่น ยังไม่กรอกวันเกิด)
-function refreshJumps() {
-  document.querySelectorAll(".panel").forEach((panel) => {
-    if (!panel.jumpTargets || panel.hidden) return;
-    const nav = panel.querySelector(".jumps");
-    let shown = 0;
-    nav.querySelectorAll("[data-j]").forEach((b) => {
-      const vis = !!panel.jumpTargets[Number(b.dataset.j)].offsetParent;
-      b.hidden = !vis;
-      shown += vis;
-    });
-    nav.hidden = shown < 3;
-  });
-}
-
 // ---------- ติดตั้งเป็นแอป (PWA) ----------
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
   navigator.serviceWorker.register("sw.js").catch(() => { /* ไม่มี service worker ก็ใช้เว็บได้ปกติ */ });
@@ -1351,6 +1358,6 @@ $("#use-gps").addEventListener("click", () => {
 const saved = store.get("profile", null);
 if (saved && saved.date) profile = computeProfile(saved);
 renderMe();
-let startTab = "me";
-try { startTab = sessionStorage.getItem("muduang.tab") || "me"; } catch { /* ไม่เป็นไร */ }
+let startTab = "today";
+try { startTab = sessionStorage.getItem("muduang.tab") || "today"; } catch { /* ไม่เป็นไร */ }
 showTab(startTab);
